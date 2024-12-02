@@ -1,19 +1,14 @@
 import express, { Request, Response, NextFunction } from 'express'
-import fs from 'fs'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { PORT } from './config.js'
+import { readPublicKey } from '../support/index.js'
 
 const app = express()
 
-// Load public key
-const publicKey: string = fs.readFileSync('public_key.pem', 'utf8')
-
-// Define the structure of the user object (you can adjust it based on the JWT payload structure)
 interface UserPayload extends JwtPayload {
     name: string
 }
 
-// Extend the Express request type to include the user object
 declare global {
     namespace Express {
         interface Request {
@@ -32,7 +27,7 @@ function authenticateToken(req: Request, res: Response, next: NextFunction): voi
         return
     }
 
-    jwt.verify(token, publicKey, { algorithms: ['RS256'], maxAge: '30 d' }, (err, decodedToken) => {
+    jwt.verify(token, readPublicKey(), { algorithms: ['RS256'], maxAge: '30 d' }, (err, decodedToken) => {
         if (err) {
             res.status(403).json({ message: 'Invalid token' })
             return

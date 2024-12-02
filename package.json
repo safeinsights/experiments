@@ -1,16 +1,17 @@
 {
-  "name": "jwt-auth-request",
+  "name": "SI-Experiments",
   "version": "1.0.0",
-  "description": "test jwt",
+  "description": "test various things",
   "main": "server.js",
   "type": "module",
-  "scripts": {
-  },
-  "author": "Nathan Stitt",
-  "license": "ISC",
+  "scripts": {},
+  "author": "SafeInsights",
+  "license": "MIT",
   "dependencies": {
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
+    "@zip.js/zip.js": "^2.7.53",
+    "commander": "^12.1.0",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^3.3.2",

@@ -1,10 +1,7 @@
-import fs from 'fs'
 import jwt from 'jsonwebtoken'
 import fetch from 'node-fetch'
+import { readPrivateKey } from '../support'
 import { PORT } from './config.js'
-
-// Load private key
-const privateKey = fs.readFileSync('private_key.pem', 'utf8')
 
 // Generate JWT
 const payload = {
@@ -12,10 +9,9 @@ const payload = {
     exp: Math.floor(Date.now() / 1000) + (60 * 60), // Token expiration (1 hour)
 }
 
-const token = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
+const token = jwt.sign(payload, readPrivateKey(), { algorithm: 'RS256' })
 
 console.log(`Generated JWT: ${token}\n`)
-
 
 ;(async () => {
     try {
