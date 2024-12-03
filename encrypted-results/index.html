@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SI Encryption Experiment</title>
+    <style>
+        pre {
+            height: 300px; width: 300px; white-space: pre-wrap;overflow: auto;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="root">
+        <div id="key-panel" style="display: flex; flex-direction: column; align-items: center;">
+            <h1>enter private key</h1>
+            <textarea name="" id="privateKeyPEM" rows="" cols="" tabindex="" style="width: 400px; height: 200px;">
+            </textarea>
+            <br/>
+            <button id="decrypt-btn">Show results</button>
+        </div>
+
+        <div id="files-panel" style="display: none; flex-direction: column; align-items: center;">
+
+
+        </div>
+
+        <!--app-html-->
+    </div>
+    <script type="module" src="/client.ts"></script>
+  </body>
+</html>
