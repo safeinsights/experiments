@@ -1,7 +1,7 @@
 import mime from 'mime-types';
 import { ZipWriter, BlobWriter, TextReader, BlobReader } from '@zip.js/zip.js';
 
-import type { ResultsManifest } from './types';
+import type { ResultsManifest, PublicKey, FileKeyMap } from './types';
 
 export class ResultsWriter {
     zipBlobWriter = new BlobWriter('application/zip');
@@ -10,7 +10,7 @@ export class ResultsWriter {
         files: {},
     };
 
-    constructor(public publicKey: string) {}
+    constructor(public publicKeys: PublicKey[]) {}
 
     async addFile(fileName: string, content: ArrayBuffer) {
         // Generate AES key
@@ -33,15 +33,19 @@ export class ResultsWriter {
         // Export AES key as raw bytes
         const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
 
-        // Encrypt AES key with public RSA key
-        const encryptedKey = await this.encryptKeyWithPublicKey(rawAesKey);
+        const keys: FileKeyMap = {}
+        for (const key of this.publicKeys) {
+            keys[key.fingerprint] = {
+                crypt: await this.encryptAesKeyWithPublicKey(key, rawAesKey)
+            }
+        }
 
         await this.zip.add(fileName, new BlobReader(new Blob([encryptedData])));
 
         this.manifest.files[fileName] = {
             path: fileName,
             bytes: content.byteLength, // n.b. size BEFORE encryption
-            key: encryptedKey,
+            keys,
             iv: Buffer.from(iv).toString('base64'),
             contentType: mime.lookup(fileName) || 'application/octet-stream',
         };
@@ -54,9 +58,9 @@ export class ResultsWriter {
         return this.zipBlobWriter.getData();
     }
 
-    private async encryptKeyWithPublicKey(aesKey: ArrayBuffer): Promise<string> {
+    private async encryptAesKeyWithPublicKey(key: PublicKey, aesKey: ArrayBuffer): Promise<string> {
         // Decode the public key
-        const publicKeyBuffer = Buffer.from(this.publicKey, 'base64');
+        const publicKeyBuffer = Buffer.from(key.publicKey, 'base64');
         const publicKey = await crypto.subtle.importKey(
             'spki',
             publicKeyBuffer,
@@ -80,4 +84,3 @@ export class ResultsWriter {
         return Buffer.from(encryptedKey).toString('base64');
     }
 }
-
