@@ -1,0 +1,346 @@
+ % time python3 s3_parquet_combined_integrity_verifier.py --bucket "openstax-enclave-data-staging" --prefix "parquet-combine-test/tutor/staging-tutor-final-si-copy-export/tutor_prodtutor/"
+2025-06-25 10:25:27,022 - INFO - Configuration:
+2025-06-25 10:25:27,022 - INFO -   Bucket: openstax-enclave-data-staging
+2025-06-25 10:25:27,022 - INFO -   Prefix: parquet-combine-test/tutor/staging-tutor-final-si-copy-export/tutor_prodtutor/
+2025-06-25 10:25:27,027 - INFO - Found credentials in environment variables.
+2025-06-25 10:25:27,145 - INFO - Found credentials in environment variables.
+2025-06-25 10:25:27,225 - INFO - Starting S3 Parquet data integrity verification...
+2025-06-25 10:25:27,454 - INFO - Connected to bucket (region: us-east-2)
+2025-06-25 10:25:27,454 - INFO - Scanning S3 bucket: openstax-enclave-data-staging with prefix: 'parquet-combine-test/tutor/staging-tutor-final-si-copy-export/tutor_prodtutor/'
+2025-06-25 10:25:28,582 - INFO - Found 2022 total files
+2025-06-25 10:25:28,582 - INFO - Table 'public.active_storage_attachments': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.active_storage_blobs': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.ar_internal_metadata': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.catalog_offerings': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_books': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_ecosystems': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_exercise_tags': 52 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_exercises': 111 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_lo_teks_tags': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_maps': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_notes': 12 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_page_tags': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_pages': 127 original, 2 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.content_tags': 9 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_content_course_ecosystems': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_content_excluded_exercises': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_enrollment_changes': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_enrollments': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_periods': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_students': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_teacher_students': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_membership_teachers': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_profile_caches': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.course_profile_courses': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.delayed_jobs': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.delayed_workers': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.entity_roles': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.environments': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.fine_print_contracts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.fine_print_signatures': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.legal_targeted_contracts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_apps': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_contexts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_course_score_callbacks': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_nonces': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_tool_consumers': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_trusted_launch_data': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.lms_users': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.oauth_access_grants': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.oauth_access_tokens': 47 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.oauth_applications': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.openstax_accounts_accounts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.openstax_salesforce_users': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.payment_codes': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.ratings_exercise_group_book_parts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.ratings_period_book_parts': 22 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.ratings_role_book_parts': 81 original, 1 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_cohort_members': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_cohorts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_manipulations': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_studies': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_study_brains': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_study_courses': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_survey_plans': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.research_surveys': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.schema_migrations': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.school_district_districts': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.school_district_schools': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.settings': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.short_code_short_codes': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_assistants': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_concept_coach_tasks': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_course_assistants': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_dropped_questions': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_extensions': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_grading_templates': 1 original, 0 combined files
+2025-06-25 10:25:28,582 - INFO - Table 'public.tasks_performance_report_exports': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_practice_questions': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_previous_attempts': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_task_plans': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_task_steps': 363 original, 2 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_exercises': 435 original, 2 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_external_urls': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_interactives': 19 original, 1 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_placeholders': 14 original, 1 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_readings': 351 original, 2 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasked_videos': 23 original, 1 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasking_plans': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_taskings': 10 original, 1 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.tasks_tasks': 166 original, 1 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_administrators': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_content_analysts': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_customer_services': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_profiles': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_researchers': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_suggestions': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_tour_views': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - INFO - Table 'public.user_tours': 1 original, 0 combined files
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.active_storage_attachments' - skipping
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.active_storage_blobs' - skipping
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.ar_internal_metadata' - skipping
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.catalog_offerings' - skipping
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.content_books' - skipping
+2025-06-25 10:25:28,583 - WARNING - No combined files found for table 'public.content_ecosystems' - skipping
+2025-06-25 10:25:28,583 - INFO - Verifying table 'public.content_exercise_tags'...
+2025-06-25 10:25:28,583 - INFO - Reading 52 original files...
+2025-06-25 10:26:02,408 - INFO - Reading 1 combined files...
+2025-06-25 10:26:05,647 - INFO - Comparing data content...
+2025-06-25 10:26:28,403 - INFO - ✓ Data content verification passed
+2025-06-25 10:26:28,403 - INFO - ✓ Table 'public.content_exercise_tags' verification PASSED
+2025-06-25 10:26:28,411 - INFO - Verifying table 'public.content_exercises'...
+2025-06-25 10:26:28,411 - INFO - Reading 111 original files...
+2025-06-25 10:28:10,542 - INFO - Reading 1 combined files...
+2025-06-25 10:28:30,923 - INFO - Comparing data content...
+2025-06-25 10:29:32,072 - INFO - ✓ Data content verification passed
+2025-06-25 10:29:32,073 - INFO - ✓ Table 'public.content_exercises' verification PASSED
+2025-06-25 10:29:32,133 - WARNING - No combined files found for table 'public.content_lo_teks_tags' - skipping
+2025-06-25 10:29:32,133 - WARNING - No combined files found for table 'public.content_maps' - skipping
+2025-06-25 10:29:32,133 - INFO - Verifying table 'public.content_notes'...
+2025-06-25 10:29:32,133 - INFO - Reading 12 original files...
+2025-06-25 10:29:40,997 - INFO - Reading 1 combined files...
+2025-06-25 10:29:42,748 - INFO - Comparing data content...
+2025-06-25 10:29:46,884 - INFO - ✓ Data content verification passed
+2025-06-25 10:29:46,884 - INFO - ✓ Table 'public.content_notes' verification PASSED
+2025-06-25 10:29:46,886 - WARNING - No combined files found for table 'public.content_page_tags' - skipping
+2025-06-25 10:29:46,886 - INFO - Verifying table 'public.content_pages'...
+2025-06-25 10:29:46,886 - INFO - Reading 127 original files...
+2025-06-25 10:31:44,559 - INFO - Reading 2 combined files...
+2025-06-25 10:32:46,319 - INFO - Comparing data content...
+2025-06-25 10:34:28,629 - INFO - ✓ Data content verification passed
+2025-06-25 10:34:28,629 - INFO - ✓ Table 'public.content_pages' verification PASSED
+2025-06-25 10:34:28,749 - INFO - Verifying table 'public.content_tags'...
+2025-06-25 10:34:28,749 - INFO - Reading 9 original files...
+2025-06-25 10:34:35,176 - INFO - Reading 1 combined files...
+2025-06-25 10:34:36,501 - INFO - Comparing data content...
+2025-06-25 10:34:41,479 - INFO - ✓ Data content verification passed
+2025-06-25 10:34:41,480 - INFO - ✓ Table 'public.content_tags' verification PASSED
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_content_course_ecosystems' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_content_excluded_exercises' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_enrollment_changes' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_enrollments' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_periods' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_students' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_teacher_students' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_membership_teachers' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_profile_caches' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.course_profile_courses' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.delayed_jobs' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.delayed_workers' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.entity_roles' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.environments' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.fine_print_contracts' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.fine_print_signatures' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.legal_targeted_contracts' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_apps' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_contexts' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_course_score_callbacks' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_nonces' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_tool_consumers' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_trusted_launch_data' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.lms_users' - skipping
+2025-06-25 10:34:41,481 - WARNING - No combined files found for table 'public.oauth_access_grants' - skipping
+2025-06-25 10:34:41,481 - INFO - Verifying table 'public.oauth_access_tokens'...
+2025-06-25 10:34:41,481 - INFO - Reading 47 original files...
+2025-06-25 10:35:25,656 - INFO - Reading 1 combined files...
+2025-06-25 10:35:41,320 - INFO - Comparing data content...
+2025-06-25 10:36:24,144 - INFO - ✓ Data content verification passed
+2025-06-25 10:36:24,144 - INFO - ✓ Table 'public.oauth_access_tokens' verification PASSED
+2025-06-25 10:36:24,150 - WARNING - No combined files found for table 'public.oauth_applications' - skipping
+2025-06-25 10:36:24,150 - WARNING - No combined files found for table 'public.openstax_accounts_accounts' - skipping
+2025-06-25 10:36:24,150 - WARNING - No combined files found for table 'public.openstax_salesforce_users' - skipping
+2025-06-25 10:36:24,150 - WARNING - No combined files found for table 'public.payment_codes' - skipping
+2025-06-25 10:36:24,150 - WARNING - No combined files found for table 'public.ratings_exercise_group_book_parts' - skipping
+2025-06-25 10:36:24,150 - INFO - Verifying table 'public.ratings_period_book_parts'...
+2025-06-25 10:36:24,150 - INFO - Reading 22 original files...
+2025-06-25 10:36:42,738 - INFO - Reading 1 combined files...
+2025-06-25 10:36:49,464 - INFO - Comparing data content...
+2025-06-25 10:37:02,252 - INFO - ✓ Data content verification passed
+2025-06-25 10:37:02,252 - INFO - ✓ Table 'public.ratings_period_book_parts' verification PASSED
+2025-06-25 10:37:02,256 - INFO - Verifying table 'public.ratings_role_book_parts'...
+2025-06-25 10:37:02,256 - INFO - Reading 81 original files...
+2025-06-25 10:38:02,728 - INFO - Reading 1 combined files...
+2025-06-25 10:38:16,724 - INFO - Comparing data content...
+2025-06-25 10:39:16,149 - INFO - ✓ Data content verification passed
+2025-06-25 10:39:16,149 - INFO - ✓ Table 'public.ratings_role_book_parts' verification PASSED
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_cohort_members' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_cohorts' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_manipulations' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_studies' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_study_brains' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_study_courses' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_survey_plans' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.research_surveys' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.schema_migrations' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.school_district_districts' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.school_district_schools' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.settings' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.short_code_short_codes' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_assistants' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_concept_coach_tasks' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_course_assistants' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_dropped_questions' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_extensions' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_grading_templates' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_performance_report_exports' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_practice_questions' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_previous_attempts' - skipping
+2025-06-25 10:39:16,160 - WARNING - No combined files found for table 'public.tasks_task_plans' - skipping
+2025-06-25 10:39:16,160 - INFO - Verifying table 'public.tasks_task_steps'...
+2025-06-25 10:39:16,160 - INFO - Reading 363 original files...
+2025-06-25 10:43:44,080 - INFO - Reading 2 combined files...
+2025-06-25 10:44:43,556 - INFO - Comparing data content...
+2025-06-25 10:49:51,879 - INFO - ✓ Data content verification passed
+2025-06-25 10:49:51,879 - INFO - ✓ Table 'public.tasks_task_steps' verification PASSED
+2025-06-25 10:49:51,934 - INFO - Verifying table 'public.tasks_tasked_exercises'...
+2025-06-25 10:49:51,934 - INFO - Reading 435 original files...
+2025-06-25 10:55:45,729 - INFO - Reading 2 combined files...
+2025-06-25 10:56:59,927 - INFO - Comparing data content...
+2025-06-25 11:03:45,541 - INFO - ✓ Data content verification passed
+2025-06-25 11:03:45,541 - INFO - ✓ Table 'public.tasks_tasked_exercises' verification PASSED
+2025-06-25 11:03:45,616 - WARNING - No combined files found for table 'public.tasks_tasked_external_urls' - skipping
+2025-06-25 11:03:45,616 - INFO - Verifying table 'public.tasks_tasked_interactives'...
+2025-06-25 11:03:45,616 - INFO - Reading 19 original files...
+2025-06-25 11:03:56,954 - INFO - Reading 1 combined files...
+2025-06-25 11:03:57,866 - INFO - Comparing data content...
+2025-06-25 11:04:02,695 - INFO - ✓ Data content verification passed
+2025-06-25 11:04:02,695 - INFO - ✓ Table 'public.tasks_tasked_interactives' verification PASSED
+2025-06-25 11:04:02,698 - INFO - Verifying table 'public.tasks_tasked_placeholders'...
+2025-06-25 11:04:02,698 - INFO - Reading 14 original files...
+2025-06-25 11:04:11,875 - INFO - Reading 1 combined files...
+2025-06-25 11:04:14,028 - INFO - Comparing data content...
+2025-06-25 11:04:20,457 - INFO - ✓ Data content verification passed
+2025-06-25 11:04:20,457 - INFO - ✓ Table 'public.tasks_tasked_placeholders' verification PASSED
+2025-06-25 11:04:20,460 - INFO - Verifying table 'public.tasks_tasked_readings'...
+2025-06-25 11:04:20,460 - INFO - Reading 351 original files...
+2025-06-25 11:08:53,471 - INFO - Reading 2 combined files...
+2025-06-25 11:10:10,638 - INFO - Comparing data content...
+2025-06-25 11:13:57,842 - INFO - ✓ Data content verification passed
+2025-06-25 11:13:57,843 - INFO - ✓ Table 'public.tasks_tasked_readings' verification PASSED
+2025-06-25 11:13:58,217 - INFO - Verifying table 'public.tasks_tasked_videos'...
+2025-06-25 11:13:58,217 - INFO - Reading 23 original files...
+2025-06-25 11:14:12,364 - INFO - Reading 1 combined files...
+2025-06-25 11:14:13,460 - INFO - Comparing data content...
+2025-06-25 11:14:19,500 - INFO - ✓ Data content verification passed
+2025-06-25 11:14:19,500 - INFO - ✓ Table 'public.tasks_tasked_videos' verification PASSED
+2025-06-25 11:14:19,503 - WARNING - No combined files found for table 'public.tasks_tasking_plans' - skipping
+2025-06-25 11:14:19,503 - INFO - Verifying table 'public.tasks_taskings'...
+2025-06-25 11:14:19,503 - INFO - Reading 10 original files...
+2025-06-25 11:14:28,503 - INFO - Reading 1 combined files...
+2025-06-25 11:14:31,800 - INFO - Comparing data content...
+2025-06-25 11:14:41,730 - INFO - ✓ Data content verification passed
+2025-06-25 11:14:41,730 - INFO - ✓ Table 'public.tasks_taskings' verification PASSED
+2025-06-25 11:14:41,732 - INFO - Verifying table 'public.tasks_tasks'...
+2025-06-25 11:14:41,732 - INFO - Reading 166 original files...
+2025-06-25 11:16:45,934 - INFO - Reading 1 combined files...
+2025-06-25 11:17:08,584 - INFO - Comparing data content...
+2025-06-25 11:18:19,125 - INFO - ✓ Data content verification passed
+2025-06-25 11:18:19,126 - INFO - ✓ Table 'public.tasks_tasks' verification PASSED
+2025-06-25 11:18:19,152 - WARNING - No combined files found for table 'public.user_administrators' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_content_analysts' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_customer_services' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_profiles' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_researchers' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_suggestions' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_tour_views' - skipping
+2025-06-25 11:18:19,153 - WARNING - No combined files found for table 'public.user_tours' - skipping
+
+================================================================================
+S3 PARQUET DATA INTEGRITY VERIFICATION REPORT
+================================================================================
+Overall Status: ✓ PASSED
+Tables Verified: 16
+Tables Passed: 16
+Tables Failed: 0
+Original Files: 1842
+Combined Files: 20
+
+Detailed Results by Table:
+----------------------------------------
+public.content_exercise_tags: ✓ PASS
+  Original: 52 files, 9,931,139 rows, 26.03 MB
+  Combined: 1 files, 9,931,139 rows, 64.11 MB
+
+public.content_exercises: ✓ PASS
+  Original: 111 files, 683,867 rows, 295.53 MB
+  Combined: 1 files, 683,867 rows, 539.72 MB
+
+public.content_notes: ✓ PASS
+  Original: 12 files, 137,846 rows, 19.74 MB
+  Combined: 1 files, 137,846 rows, 34.86 MB
+
+public.content_pages: ✓ PASS
+  Original: 127 files, 65,102 rows, 763.25 MB
+  Combined: 2 files, 65,102 rows, 1302.92 MB
+
+public.content_tags: ✓ PASS
+  Original: 9 files, 1,055,339 rows, 11.82 MB
+  Combined: 1 files, 1,055,339 rows, 18.54 MB
+
+public.oauth_access_tokens: ✓ PASS
+  Original: 47 files, 4,461,132 rows, 205.33 MB
+  Combined: 1 files, 4,461,132 rows, 358.69 MB
+
+public.ratings_period_book_parts: ✓ PASS
+  Original: 22 files, 646,333 rows, 92.99 MB
+  Combined: 1 files, 646,333 rows, 159.61 MB
+
+public.ratings_role_book_parts: ✓ PASS
+  Original: 81 files, 3,434,947 rows, 195.81 MB
+  Combined: 1 files, 3,434,947 rows, 307.67 MB
+
+public.tasks_task_steps: ✓ PASS
+  Original: 363 files, 28,837,235 rows, 605.20 MB
+  Combined: 2 files, 28,837,235 rows, 1041.92 MB
+
+public.tasks_tasked_exercises: ✓ PASS
+  Original: 435 files, 18,451,170 rows, 1020.05 MB
+  Combined: 2 files, 18,451,170 rows, 1577.66 MB
+
+public.tasks_tasked_interactives: ✓ PASS
+  Original: 19 files, 290,458 rows, 2.93 MB
+  Combined: 1 files, 290,458 rows, 4.96 MB
+
+public.tasks_tasked_placeholders: ✓ PASS
+  Original: 14 files, 3,146,776 rows, 8.39 MB
+  Combined: 1 files, 3,146,776 rows, 20.66 MB
+
+public.tasks_tasked_readings: ✓ PASS
+  Original: 351 files, 9,118,811 rows, 607.10 MB
+  Combined: 2 files, 9,118,811 rows, 1787.66 MB
+
+public.tasks_tasked_videos: ✓ PASS
+  Original: 23 files, 379,216 rows, 3.47 MB
+  Combined: 1 files, 379,216 rows, 5.91 MB
+
+public.tasks_taskings: ✓ PASS
+  Original: 10 files, 2,200,708 rows, 33.10 MB
+  Combined: 1 files, 2,200,708 rows, 61.30 MB
+
+public.tasks_tasks: ✓ PASS
+  Original: 166 files, 2,200,708 rows, 302.82 MB
+  Combined: 1 files, 2,200,708 rows, 525.33 MB
+
+================================================================================
+2025-06-25 11:18:19,153 - INFO - ✓ All verifications passed!
+python3 s3_parquet_combined_integrity_verifier.py --bucket  --prefix   1426.46s user 178.36s system 50% cpu 52:53.01 total
