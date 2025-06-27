@@ -16,6 +16,25 @@
         "title": "Open SafeInsights AI Chat"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "safeinsightsaicompanion",
+          "title": "SafeInsights AI",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "safeinsightsaicompanion": [
+        {
+          "type": "webview",
+          "id": "safeinsightsaicompanion.chatView",
+          "name": "Chat",
+          "when": "true"
+        }
+      ]
+    },
     "configuration": {
       "title": "SafeInsights AI Companion",
       "properties": {
