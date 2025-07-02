@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { LLMClient, LLMClientFactory } from './llmClients';
+import { PROMPT_CONTEXT, getFileTypeContext } from './promptContext';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'safeinsights-ai-companion.chatView';
@@ -89,34 +90,42 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
 
         try {
+            // Build the complete message with predefined context
+            let fullMessage = PROMPT_CONTEXT;
+            
             // Get current editor context
             const editor = vscode.window.activeTextEditor;
-            let contextMessage = message;
             
             if (editor) {
                 const fileName = editor.document.fileName.split('/').pop() || 'unknown';
                 const selection = editor.selection;
                 const language = editor.document.languageId;
                 
+                // Add language-specific context
+                fullMessage += getFileTypeContext(language);
+                
+                // Add file context
                 if (!selection.isEmpty) {
                     const selectedText = editor.document.getText(selection);
                     const lineStart = selection.start.line + 1;
                     const lineEnd = selection.end.line + 1;
-                    contextMessage += `\n\nContext: Working with ${fileName} (${language}), lines ${lineStart}-${lineEnd}:\n\`\`\`${language}\n${selectedText}\n\`\`\``;
+                    fullMessage += `\n\nCurrent context: Working with ${fileName} (${language}), lines ${lineStart}-${lineEnd}:\n\`\`\`${language}\n${selectedText}\n\`\`\``;
                 } else {
                     const fullText = editor.document.getText();
                     if (fullText.length > 2000) {
                         // Truncate large files
-                        contextMessage += `\n\nContext: Working with ${fileName} (${language}) - showing first 2000 characters:\n\`\`\`${language}\n${fullText.substring(0, 2000)}...\n\`\`\``;
+                        fullMessage += `\n\nCurrent context: Working with ${fileName} (${language}) - showing first 2000 characters:\n\`\`\`${language}\n${fullText.substring(0, 2000)}...\n\`\`\``;
                     } else {
-                        contextMessage += `\n\nContext: Working with ${fileName} (${language}):\n\`\`\`${language}\n${fullText}\n\`\`\``;
+                        fullMessage += `\n\nCurrent context: Working with ${fileName} (${language}):\n\`\`\`${language}\n${fullText}\n\`\`\``;
                     }
                 }
-                contextMessage += '\n\nPlease provide code suggestions that I can apply directly to this file. Use proper code blocks with language identifiers.';
             }
+            
+            // Add the user's message
+            fullMessage += `\n\nUser request: ${message}`;
 
-            // Send message to AI
-            const response = await this._client.sendMessage(contextMessage);
+            // Send complete message to AI
+            const response = await this._client.sendMessage(fullMessage);
 
             // Add AI response to chat
             this._view.webview.postMessage({
@@ -190,12 +199,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             const edit = new vscode.WorkspaceEdit();
             
             if (selection.isEmpty) {
-                // If no selection, replace entire file
-                const fullRange = new vscode.Range(
-                    editor.document.positionAt(0),
-                    editor.document.positionAt(editor.document.getText().length)
-                );
-                edit.replace(editor.document.uri, fullRange, code);
+                // If no selection, insert at cursor position
+                edit.insert(editor.document.uri, selection.start, code);
             } else {
                 // Replace selected text
                 edit.replace(editor.document.uri, selection, code);
@@ -204,7 +209,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             const success = await vscode.workspace.applyEdit(edit);
             
             if (success) {
-                vscode.window.showInformationMessage('Code applied successfully!');
+                // Move cursor to end of inserted code
+                const lines = code.split('\n');
+                const lastLineLength = lines[lines.length - 1].length;
+                const newPosition = new vscode.Position(
+                    selection.start.line + lines.length - 1,
+                    lines.length === 1 ? selection.start.character + lastLineLength : lastLineLength
+                );
+                editor.selection = new vscode.Selection(newPosition, newPosition);
+                
+                vscode.window.showInformationMessage('Code inserted successfully!');
             } else {
                 vscode.window.showErrorMessage('Failed to apply code changes.');
             }
@@ -294,19 +308,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             '        function applyCode(code) {',
             '            vscode.postMessage({ type: "applyCode", code: code });',
             '        }',
-            '        function applyCodeToFile(code) {',
-            '            const decodedCode = code.replace(/&quot;/g, \'"\').replace(/&#39;/g, "\'");',
-            '            vscode.postMessage({ type: "applyCodeToFile", code: decodedCode });',
+            '        function applyCodeToFile(blockId) {',
+            '            const code = codeBlocks[blockId];',
+            '            if (code) {',
+            '                vscode.postMessage({ type: "applyCodeToFile", code: code });',
+            '            } else {',
+            '                console.error("Code block not found:", blockId);',
+            '            }',
             '        }',
+            '        let codeBlockCounter = 0;',
+            '        const codeBlocks = {};',
             '        function formatMessage(text) {',
             '            return text',
             '                .replace(/```([\\w]*)?\\n([\\s\\S]*?)```/g, function(match, lang, code) {',
-            '                    const escapedCode = code.replace(/"/g, "&quot;").replace(/\'/g, "&#39;");',
+            '                    const blockId = "code_block_" + (++codeBlockCounter);',
+            '                    codeBlocks[blockId] = code;',
             '                    return "<div class=\\"code-block\\">" +',
             '                        "<div class=\\"code-header\\">" +',
             '                            "<span class=\\"code-lang\\">" + (lang || "code") + "</span>" +',
-            '                            "<button class=\\"apply-button\\" onclick=\\"applyCodeToFile(\'" + escapedCode + "\')\\">" +',
-            '                                "Apply to File" +',
+            '                            "<button class=\\"apply-button\\" onclick=\\"applyCodeToFile(\'" + blockId + "\')\\">" +',
+            '                                "Insert at Cursor" +',
             '                            "</button>" +',
             '                        "</div>" +',
             '                        "<pre><code>" + code + "</code></pre>" +',
