@@ -62,11 +62,11 @@ if (!dbIsValid(con)) {
 # Summary Statistics Queries
 
 # Run COUNT(id) and time it
-#count_time <- system.time({
-#  highlights_count_by_id <- dbGetQuery(con,
-#    "SELECT COUNT(id) as highlights_count FROM highlights"
-#  )
-#})
+count_time <- system.time({
+  highlights_count_by_id <- dbGetQuery(con,
+    "SELECT COUNT(id) as highlights_count FROM highlights"
+  )
+})
 
 # Run EXPLAIN to check query plan
 explain_plan_result <- dbGetQuery(con,
@@ -77,23 +77,23 @@ explain_plan_result <- dbGetQuery(con,
 explain_plan_text <- paste(explain_plan_result[[1]], collapse = "\n")
 
 # Prepare output strings
-#count_result_str <- capture.output({
-#  cat("=== COUNT(id) Result ===\n")
-#  print(highlights_count_by_id)
-#  cat("\n")
-#})
+count_result_str <- capture.output({
+  cat("=== COUNT(id) Result ===\n")
+  print(highlights_count_by_id)
+  cat("\n")
+})
 
-#count_time_str <- capture.output({
-#  cat("=== COUNT(id) Query Time (s) ===\n")
-#  print(count_time["elapsed"])
-#  cat("\n")
-#})
+count_time_str <- capture.output({
+  cat("=== COUNT(id) Query Time (s) ===\n")
+  print(count_time["elapsed"])
+  cat("\n")
+})
 
 explain_str <- c("=== EXPLAIN Plan ===", explain_plan_text, "")
 
 # Write everything to a single text file, put in csv_file_path which will be used by the POST later
 csv_file_path <- "count_id_query_output.txt"
-writeLines(c(explain_str), con = csv_file_path)
+writeLines(c(count_result_str, count_time_str, explain_str), con = csv_file_path)
 
 # Optional log message
 cat("Wrote output to:", csv_file_path, "\n")
