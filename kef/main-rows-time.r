@@ -64,12 +64,12 @@ if (!dbIsValid(con)) {
 # Grab an example row
 query_time <- system.time({
   example_row_query_result <- dbGetQuery(con,
-  "SELECT * FROM highlights LIMIT 5"
+  "SELECT * FROM highlights LIMIT 5" #select 5 rows from highlights, all columns
 )
 })
 print("Finished row query.")
 
-# Prepare output strings 
+# Prepare output strings
 query_time_str <- capture.output({
   cat("=== Example Row Query Time ===\n")
   print(query_time)
@@ -87,10 +87,34 @@ example_row_str <- capture.output({
 csv_file_path <- "query_result.txt"
 
 writeLines(c("Example Row Query Result:", example_row_str,
-             "Row query took (in seconds):", query_time_str), 
+             "Row query took (in seconds):", query_time_str),
            con = csv_file_path,
            sep = "\n")
 
+
+
+# DBM test ----------------------------------------------------------------
+
+query_time_row <- system.time({
+    table_row <- dbGetQuery(con,
+                            "SELECT COUNT(*) AS row_count
+                            FROM highlights;" #count num rows
+    )
+})
+print(query_time_row)
+
+query_time_col <- system.time({
+    table_col <- dbGetQuery(con,
+                            "SELECT COUNT(*) AS column_count
+                            FROM information_schema.columns
+                            WHERE table_name = 'highlights';" # count num cols
+    )
+})
+
+
+print(query_time_col)
+
+write_csv(data_frame(table_row, table_col), file= "table_dimensions.csv")
 ###############################################################################
 # Insert Analysis code here
 
