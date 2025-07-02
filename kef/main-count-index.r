@@ -91,12 +91,12 @@ explain_plan_text <- paste(explain_plan_result[[1]], collapse = "\n")
 
 explain_str <- c("=== EXPLAIN Plan ===", explain_plan_text, "")
 
-# Write everything to a single text file
-output_file <- "count_id_query_output.txt"
-writeLines(c(explain_str), con = output_file)
+# Write everything to a single text file, put in csv_file_path which will be used by the POST later
+csv_file_path <- "count_id_query_output.txt"
+writeLines(c(explain_str), con = csv_file_path)
 
 # Optional log message
-cat("Wrote output to:", output_file, "\n")
+cat("Wrote output to:", csv_file_path, "\n")
 
 print("Finished everything.")
 
