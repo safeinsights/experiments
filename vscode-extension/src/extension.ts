@@ -16,14 +16,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register command to open chat
     context.subscriptions.push(
-        vscode.commands.registerCommand('safeinsightsaicompanion.openChat', () => {
+        vscode.commands.registerCommand('safeinsights-ai-companion.openChat', () => {
             provider.show();
         })
     );
 
     // Register command to apply code changes
     context.subscriptions.push(
-        vscode.commands.registerCommand('safeinsightsaicompanion.applyCode', async (code: string, range?: vscode.Range) => {
+        vscode.commands.registerCommand('safeinsights-ai-companion.applyCode', async (code: string, range?: vscode.Range) => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showErrorMessage('No active editor found');

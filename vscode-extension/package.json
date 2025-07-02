@@ -1,41 +1,61 @@
 {
-  "name": "together-ai-code-assistant",
-  "displayName": "Together AI Code Assistant",
-  "description": "Chat with LLMs on Together.ai to modify your code",
+  "name": "safeinsights-ai-companion",
+  "displayName": "SafeInsights AI Companion",
+  "description": "AI-powered code assistant for SafeInsights development",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": ["Other"],
+  "icon": "logo.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "together-ai-assistant.openChat",
-        "title": "Open Together AI Chat"
+        "command": "safeinsights-ai-companion.openChat",
+        "title": "Open SafeInsights AI Chat"
       }
     ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "safeinsights-ai-companion",
+          "title": "SafeInsights AI Companion",
+          "icon": "logo.png"
+        }
+      ]
+    },
+    "views": {
+      "safeinsights-ai-companion": [
+        {
+          "id": "safeinsights-ai-companion.chatView",
+          "name": "AI Chat",
+          "type": "webview",
+          "icon": "logo.png"
+        }
+      ]
+    },
     "configuration": {
-      "title": "Together AI Assistant",
+      "title": "SafeInsights AI Companion",
       "properties": {
-        "together-ai-assistant.provider": {
+        "safeinsights-ai-companion.provider": {
           "type": "string",
           "enum": ["ollama", "together"],
           "default": "ollama",
           "description": "LLM provider to use (ollama for local, together for Together.ai)"
         },
-        "together-ai-assistant.apiKey": {
+        "safeinsights-ai-companion.apiKey": {
           "type": "string",
           "default": "",
           "description": "Your Together.ai API key (only needed when provider is 'together')"
         },
-        "together-ai-assistant.model": {
+        "safeinsights-ai-companion.model": {
           "type": "string",
           "default": "llama3",
           "description": "The model to use (e.g., 'llama3' for Ollama, 'meta-llama/Llama-3-70b-chat-hf' for Together.ai)"
         },
-        "together-ai-assistant.ollamaUrl": {
+        "safeinsights-ai-companion.ollamaUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Ollama API URL"

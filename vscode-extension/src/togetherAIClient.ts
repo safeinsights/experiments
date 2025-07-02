@@ -7,7 +7,7 @@ export class TogetherAIClient {
     private baseURL = 'https://api.together.xyz/v1';
 
     constructor() {
-        const config = vscode.workspace.getConfiguration('together-ai-assistant');
+        const config = vscode.workspace.getConfiguration('safeinsights-ai-companion');
         this.apiKey = config.get('apiKey') || '';
         this.model = config.get('model') || 'meta-llama/Llama-3-70b-chat-hf';
     }
