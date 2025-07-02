@@ -1,0 +1,11 @@
+{
+  // Ollama Configuration (Local Development)
+  "together-ai-assistant.provider": "ollama",
+  "together-ai-assistant.model": "llama3",
+  "together-ai-assistant.ollamaUrl": "http://localhost:11434",
+
+  // Together.ai Configuration (Production) - Uncomment these and comment above to switch
+  // "together-ai-assistant.provider": "together",
+  // "together-ai-assistant.apiKey": "your-api-key-here",
+  // "together-ai-assistant.model": "meta-llama/Llama-3-70b-chat-hf"
+}

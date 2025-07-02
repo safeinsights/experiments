@@ -1,13 +1,22 @@
 import * as vscode from 'vscode';
-import { TogetherAIClient } from './togetherAIClient';
+import { LLMClient, LLMClientFactory } from './llmClient';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'safeinsightsaicompanion.chatView';
+    public static readonly viewType = 'together-ai-assistant.chatView';
     private _view?: vscode.WebviewView;
-    private _client: TogetherAIClient;
+    private _client: LLMClient;
 
     constructor(private readonly _extensionUri: vscode.Uri) {
-        this._client = new TogetherAIClient();
+        const config = vscode.workspace.getConfiguration('together-ai-assistant');
+        this._client = LLMClientFactory.create(config);
+        
+        // Update client when configuration changes
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('together-ai-assistant')) {
+                const newConfig = vscode.workspace.getConfiguration('together-ai-assistant');
+                this._client = LLMClientFactory.create(newConfig);
+            }
+        });
     }
 
     public resolveWebviewView(
@@ -31,7 +40,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     await this._handleUserMessage(data.message);
                     break;
                 case 'applyCode':
-                    vscode.commands.executeCommand('safeinsightsaicompanion.applyCode', data.code);
+                    vscode.commands.executeCommand('together-ai-assistant.applyCode', data.code);
                     break;
                 case 'getSelectedCode':
                     this._sendSelectedCode();
@@ -118,7 +127,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>SafeInsights AI Chat</title>
+            <title>Together AI Chat</title>
             <style>
                 body {
                     margin: 0;
@@ -256,16 +265,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 }
 
                 function formatMessage(text) {
+                    // Simple markdown-like formatting
                     return text
-                        .replace(/\`\`\`([\\w]+)?\\n([\\s\\S]*?)\`\`\`/g, function(match, lang, code) {
-                            const escapedCode = code.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                            return '<div class="code-block">' +
-                                '<button class="apply-button" onclick="applyCode(\\'' + escapedCode + '\\')">Apply Code</button>' +
-                                '<pre><code>' + escapeHtml(code) + '</code></pre>' +
-                                '</div>';
+                        .replace(/\`\`\`(\w+)?\n([\s\S]*?)\`\`\`/g, (match, lang, code) => {
+                            return \`<div class="code-block">
+                                <button class="apply-button" onclick="applyCode(\\\`\${code.replace(/\`/g, '\\\\`').replace(/\$/g, '\\\\$')}\\\`)">Apply Code</button>
+                                <pre><code>\${escapeHtml(code)}</code></pre>
+                            </div>\`;
                         })
                         .replace(/\`([^\`]+)\`/g, '<code>$1</code>')
-                        .replace(/\\n/g, '<br>');
+                        .replace(/\n/g, '<br>');
                 }
 
                 function escapeHtml(text) {
@@ -286,7 +295,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     switch (message.type) {
                         case 'addMessage':
                             const messageEl = document.createElement('div');
-                            messageEl.className = 'message ' + message.sender + '-message';
+                            messageEl.className = \`message \${message.sender}-message\`;
                             messageEl.innerHTML = formatMessage(message.message);
                             messagesContainer.appendChild(messageEl);
                             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -295,9 +304,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             loadingIndicator.style.display = message.show ? 'block' : 'none';
                             break;
                         case 'selectedCode':
-                            var nl = '\\n';
-                            var codeBlock = String.fromCharCode(96) + String.fromCharCode(96) + String.fromCharCode(96);
-                            messageInput.value = 'Can you help me with this ' + message.language + ' code:' + nl + codeBlock + message.language + nl + message.code + nl + codeBlock;
+                            messageInput.value = \`Can you help me with this \${message.language} code:\\n\\\`\\\`\\\`\${message.language}\\n\${message.code}\\n\\\`\\\`\\\`\`;
                             break;
                     }
                 });
