@@ -61,35 +61,20 @@ if (!dbIsValid(con)) {
 ###############################################################################
 # Summary Statistics Queries
 
-# Grab an example row
+# Grab some example rows
 query_time <- system.time({
   example_row_query_result <- dbGetQuery(con,
   "SELECT * FROM highlights LIMIT 20"
 )
 })
-print("Finished row query.")
 
-# Prepare output strings 
-query_time_str <- capture.output({
-  cat("=== Example Row Query Time ===\n")
-  print(query_time)
-  cat("\n")
-})
+print(paste("Finished row query in", query_time["elapsed"], "seconds"))
 
-example_row_str <- capture.output({
-  cat("=== Example Row Query Result ===\n")
-  print(example_row_query_result)
-  cat("\n")
-})
+# Save results to CSV
+csv_file_path <- "example_rows.csv"
+write.csv(example_row_query_result, csv_file_path, row.names = FALSE)
+print(paste("Wrote CSV to", csv_file_path))
 
-
-# Write/append to text file
-csv_file_path <- "query_result.txt"
-
-writeLines(c("Example Row Query Result:", example_row_str,
-             "Row query took (in seconds):", query_time_str), 
-           con = csv_file_path,
-           sep = "\n")
 
 ###############################################################################
 # Insert Analysis code here
