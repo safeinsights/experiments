@@ -2,6 +2,8 @@
 
 ### Indexes in the PostgreSQL Table 
 
+main.r file: <https://github.com/safeinsights/experiments/blob/main/kef/main-index.r>
+
 ### Code Snippet
 ```
 # Find out what is indexed 
@@ -34,6 +36,8 @@ indexdef
 6 CREATE INDEX index_highlights_on_user_id ON public.highlights USING btree (user_id)
 7 CREATE INDEX index_highlights_on_user_id_and_source_id ON public.highlights USING btree (user_id
 ```
+### Counting performance
+main.r file: <https://github.com/safeinsights/experiments/blob/main/kef/main-count-index-explain.r>
 
 ### ✅ Code Snippet for Count(id) (with `EXPLAIN` Plan)
 
