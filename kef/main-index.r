@@ -61,12 +61,6 @@ if (!dbIsValid(con)) {
 ###############################################################################
 # Summary Statistics Queries
 
-# Grab 5 example rows
-example_row_query_result <- dbGetQuery(con,
-  "SELECT * FROM highlights LIMIT 5"
-)
-print("Finished row query.")
-
 # Find out what is indexed 
 query_time <- system.time({
   highlights_indexes_result <- dbGetQuery(con,
@@ -83,14 +77,7 @@ query_time_str <- capture.output({
   print(query_time)
   cat("\n")
 })
-print("About to print row query result...")
-print(example_row_query_result)
-example_row_str <- capture.output({
-  cat("=== Example Row Query Result ===\n")
-  print(example_row_query_result)
-  cat("\n")
-})
-print("Finished row output.")
+
 print("About to print highlights indexes result...")
 
 highlights_indexes_str <- capture.output({
@@ -103,12 +90,10 @@ print("Finished indexes output.")
 # Write/append to text file
 csv_file_path <- "query_result.txt"
 
-writeLines(c("Example Row Query Result:", example_row_str,
-             "Indexes Result:", highlights_indexes_str,
-             "Index query took:", query_time_str
-            ),
-           con = csv_file_path,
-           sep = "\n")
+writeLines(
+  c(highlights_indexes_str,query_time_str),
+  con = csv_file_path,
+  sep = "\n")
 print("Finished everything.")
 
 ###############################################################################
