@@ -1,6 +1,41 @@
-## 📊 Counting Rows in a Large PostgreSQL Table (with `EXPLAIN` Plan)
+## 📊 Notes and Highlights Performance Info 
 
-### ✅ Code Snippet
+### Indexes in the PostgreSQL Table 
+
+### Code Snippet
+```
+# Find out what is indexed 
+query_time <- system.time({
+  highlights_indexes_result <- dbGetQuery(con,
+    "SELECT * FROM pg_indexes WHERE tablename = 'highlights';"
+  )
+})
+```
+
+### 🧾 Results
+
+```
+Indexes Result:
+=== Highlights Indexes Result ===
+schemaname tablename indexname tablespace
+1 public highlights highlights_pkey <NA>
+2 public highlights index_highlights_on_next_highlight_id <NA>
+3 public highlights index_highlights_on_prev_highlight_id <NA>
+4 public highlights index_highlights_on_scope_id <NA>
+5 public highlights index_highlights_on_source_type <NA>
+6 public highlights index_highlights_on_user_id <NA>
+7 public highlights index_highlights_on_user_id_and_source_id <NA>
+indexdef
+1 CREATE UNIQUE INDEX highlights_pkey ON public.highlights USING btree (id)
+2 CREATE INDEX index_highlights_on_next_highlight_id ON public.highlights USING btree (next_highlight_id)
+3 CREATE INDEX index_highlights_on_prev_highlight_id ON public.highlights USING btree (prev_highlight_id)
+4 CREATE INDEX index_highlights_on_scope_id ON public.highlights USING btree (scope_id)
+5 CREATE INDEX index_highlights_on_source_type ON public.highlights USING btree (source_type)
+6 CREATE INDEX index_highlights_on_user_id ON public.highlights USING btree (user_id)
+7 CREATE INDEX index_highlights_on_user_id_and_source_id ON public.highlights USING btree (user_id
+```
+
+### ✅ Code Snippet for Count(id) (with `EXPLAIN` Plan)
 
 ```r
 # Run COUNT(id) and time it
