@@ -57,7 +57,7 @@ explain_plan_result <- dbGetQuery(con,
 
 ---
 
-### 🧾 Results
+### 🧾 Results 37 minutes
 
 ```
 highlights_count
@@ -81,6 +81,22 @@ Finalize Aggregate (cost=2754949.23..2754949.24 rows=1 width=8)
 ```
 
 ---
+
+### With some changes that Ripal made to the enclave
+
+Bumping up multiple things because of AWS constraints:
+```
+Storage: 130 --> 400
+IOPS: 3000 --> 12000
+Throughput: 125 --> 500
+```
+### 🧾 New Results ~20 minutes
+
+```
+=== COUNT(id) Query Time (s) ===
+elapsed
+1265.229
+```
 
 ### 💬 What ChatGPT Said Might Explain the Long Runtime
 
