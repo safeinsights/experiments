@@ -91,6 +91,32 @@ combined_results <- rbind(scoped_highlights, scoped_highlights_annotated)
 combined_results$query_type <- c(rep("unfiltered", nrow(scoped_highlights)),
                                  rep("has_annotation", nrow(scoped_highlights_annotated)))
 
+# Create a "fake row" to store timing summary
+timing_row <- data.frame(
+  id = "00000000-0000-0000-0000-000000000000",
+  user_id = "00000000-0000-0000-0000-000000000000",
+  source_type = 0,
+  source_id = "timing-source",
+  source_metadata = NA,
+  anchor = "timing-row",
+  highlighted_content = paste("General query:", general_query_time["elapsed"], "s | Annotated query:", annotated_query_time["elapsed"], "s"),
+  annotation = NA,
+  color = NA,
+  location_strategies = NA,
+  created_at = NA,
+  updated_at = NA,
+  scope_id = "timing-scope",
+  order_in_source = NA,
+  prev_highlight_id = NA,
+  next_highlight_id = NA,
+  content_path = NA,
+  query_type = "timing_summary",
+  stringsAsFactors = FALSE
+)
+
+# Add timing row to the combined results
+combined_results <- rbind(combined_results, timing_row)
+
 # Write to CSV
 csv_file_path <- "combined_scoped_highlights.csv"
 write.csv(combined_results, csv_file_path, row.names = FALSE)
