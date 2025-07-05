@@ -111,6 +111,8 @@ sample_preview <- highlights_2023 %>%
   filter(user_id == top_user & !is.na(annotation)) %>%
   slice_head(n = 5)
 
+
+
 # ---- Book Summary ----
 book_summary <- highlights_2023 %>%
   group_by(scope_id) %>%
@@ -129,7 +131,7 @@ write.table(summary_df, file = csv_file_path, sep = ",", row.names = FALSE, col.
 
 # Append sample preview
 write("\n\nSample Preview (Top Annotator)\n", file = csv_file_path, append = TRUE)
-write.table(sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
+write.table(sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE, quote = TRUE)
 
 # Append book summary
 write("\n\nBook Summary\n", file = csv_file_path, append = TRUE)
