@@ -109,18 +109,17 @@ book_summary <- highlights_2023 %>%
 
 # ---- Write All to One CSV File ----
 csv_file_path <- "highlight_2023_summary.csv"
-file_conn <- file(csv_file_path)
 
-writeLines("Summary\n", file_conn)
-write.table(summary_df, file = file_conn, sep = ",", row.names = FALSE, col.names = TRUE)
+# Write summary block first
+write.table(summary_df, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE)
 
-writeLines("\n\nUser Summary\n", file_conn)
-write.table(user_summary, file = file_conn, sep = ",", row.names = FALSE, col.names = TRUE)
+# Append user summary
+write("\n\nUser Summary\n", file = csv_file_path, append = TRUE)
+write.table(user_summary, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
 
-writeLines("\n\nBook Summary\n", file_conn)
-write.table(book_summary, file = file_conn, sep = ",", row.names = FALSE, col.names = TRUE)
-
-close(file_conn)
+# Append book summary
+write("\n\nBook Summary\n", file = csv_file_path, append = TRUE)
+write.table(book_summary, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
 
 print(paste("Wrote results to", csv_file_path))
 
