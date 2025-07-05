@@ -76,8 +76,6 @@ query_time <- system.time({
 })
 
 print(paste("Finished highlights query in", query_time["elapsed"], "seconds"))
-# Get first 5 sample rows from highlights_2023
-sample_preview <- head(highlights_2023, 5)
 
 # Convert created_at to proper date-time if needed
 highlights_2023$created_at <- ymd_hms(highlights_2023$created_at)
@@ -101,6 +99,18 @@ user_summary <- highlights_2023 %>%
     .groups = "drop"
   )
 
+# ---- Top User  ----
+# Determine the user with the most annotations
+top_user <- user_summary %>%
+  arrange(desc(annotations_count)) %>%
+  slice(1) %>%
+  pull(user_id)
+
+# ---- Sample Top User  ----
+sample_preview <- highlights_2023 %>%
+  filter(user_id == top_user & !is.na(annotation)) %>%
+  slice_head(n = 5)
+
 # ---- Book Summary ----
 book_summary <- highlights_2023 %>%
   group_by(scope_id) %>%
@@ -118,7 +128,7 @@ csv_file_path <- "highlight_2023_summary.csv"
 write.table(summary_df, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE)
 
 # Append sample preview
-write("\n\nSample Preview (first 5 rows)\n", file = csv_file_path, append = TRUE)
+write("\n\nSample Preview (Top Annotator)\n", file = csv_file_path, append = TRUE)
 write.table(sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
 
 # Append book summary
