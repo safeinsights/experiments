@@ -76,6 +76,8 @@ query_time <- system.time({
 })
 
 print(paste("Finished highlights query in", query_time["elapsed"], "seconds"))
+# Get first 5 sample rows from highlights_2023
+sample_preview <- head(highlights_2023, 5)
 
 # Convert created_at to proper date-time if needed
 highlights_2023$created_at <- ymd_hms(highlights_2023$created_at)
@@ -115,13 +117,17 @@ csv_file_path <- "highlight_2023_summary.csv"
 # Write summary block first
 write.table(summary_df, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE)
 
-# Append user summary
-write("\n\nUser Summary\n", file = csv_file_path, append = TRUE)
-write.table(user_summary, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
+# Append sample preview
+write("\n\nSample Preview (first 5 rows)\n", file = csv_file_path, append = TRUE)
+write.table(sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
 
 # Append book summary
 write("\n\nBook Summary\n", file = csv_file_path, append = TRUE)
 write.table(book_summary, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
+
+# Append user summary
+write("\n\nUser Summary\n", file = csv_file_path, append = TRUE)
+write.table(user_summary, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE)
 
 print(paste("Wrote results to", csv_file_path))
 
