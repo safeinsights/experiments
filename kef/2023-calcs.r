@@ -107,7 +107,7 @@ book_summary <- highlights_2023 %>%
     .groups = "drop"
   )
 # Replace user_id with anonymous labels
-user_summary$user_id <- paste0("User ", seq_len(nrow(user_summary)))
+user_summary$user_id <- paste0(seq_len(nrow(user_summary)))
 
 # ---- Write All to One CSV File ----
 csv_file_path <- "highlight_2023_summary.csv"
