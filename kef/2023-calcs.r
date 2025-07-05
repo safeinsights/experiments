@@ -71,7 +71,7 @@ query_time <- system.time({
   highlights_2023 <- dbGetQuery(con, "
     SELECT * FROM highlights
     WHERE created_at >= '2023-01-01' AND created_at < '2024-01-01'
-    LIMIT 1000
+    LIMIT 10000
   ")
 })
 
@@ -106,6 +106,8 @@ book_summary <- highlights_2023 %>%
     highlights_count = n(),
     .groups = "drop"
   )
+# Replace user_id with anonymous labels
+user_summary$user_id <- paste0("User ", seq_len(nrow(user_summary)))
 
 # ---- Write All to One CSV File ----
 csv_file_path <- "highlight_2023_summary.csv"
