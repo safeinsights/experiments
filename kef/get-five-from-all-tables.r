@@ -88,8 +88,8 @@ for (table in tables_to_query) {
 
 # Write all results to a single text file
 csv_file_path <- "preview_additional_tables.txt"
-writeLines(all_output, con = output_file)
-cat("Wrote preview output to:", output_file, "\n")
+writeLines(all_output, con = csv_file_path)
+cat("Wrote preview output to:", csv_file_path, "\n")
 
 
 
