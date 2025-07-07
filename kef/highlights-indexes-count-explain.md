@@ -97,7 +97,11 @@ Throughput: 125 --> 500
 elapsed
 1265.229
 ```
-
+### Sanity check - 12 seconds  
+- PostgreSQL on old laptop
+- 124M entries of junk
+- Count(id) takes 12 seconds
+  
 ### 💬 What ChatGPT Said Might Explain the Long Runtime
 
 Despite PostgreSQL using a **Parallel Index Only Scan**, the runtime was nearly identical to a full `COUNT(*)` (~37 minutes). This could be due to:
