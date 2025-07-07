@@ -107,10 +107,10 @@ top_user <- user_summary %>%
   pull(user_id)
 
 # ---- Sample Top User  ----
-sample_preview <- highlights_2023 %>%
+top_user_sample_preview <- highlights_2023 %>%
   filter(user_id == top_user & !is.na(annotation)) %>%
-  slice_head(n = 5)
-
+  slice_head(n = 5) %>%
+  select(user_id, scope_id, highlighted_content, annotation)
 
 
 # ---- Book Summary ----
@@ -120,8 +120,8 @@ book_summary <- highlights_2023 %>%
     highlights_count = n(),
     .groups = "drop"
   )
-# Replace user_id with anonymous labels
-user_summary$user_id <- paste0(seq_len(nrow(user_summary)))
+# NOT DOING YET Replace user_id with anonymous labels
+# user_summary$user_id <- paste0(seq_len(nrow(user_summary)))
 
 # ---- Write All to One CSV File ----
 csv_file_path <- "highlight_2023_summary.csv"
@@ -131,7 +131,7 @@ write.table(summary_df, file = csv_file_path, sep = ",", row.names = FALSE, col.
 
 # Append sample preview
 write("\n\nSample Preview (Top Annotator)\n", file = csv_file_path, append = TRUE)
-write.table(sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE, quote = TRUE)
+write.table(top_user_sample_preview, file = csv_file_path, sep = ",", row.names = FALSE, col.names = TRUE, append = TRUE, quote = TRUE)
 
 # Append book summary
 write("\n\nBook Summary\n", file = csv_file_path, append = TRUE)
