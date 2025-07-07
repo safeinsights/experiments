@@ -95,33 +95,42 @@ writeLines(c("Example Row Query Result:", example_row_str,
 
 # DBM test ----------------------------------------------------------------
 
-query_time_row <- system.time({
-    table_row <- dbGetQuery(con,
-                            "SELECT COUNT(*) AS row_count
-                            FROM highlights;" #count num rows
-    )
-})
-print(query_time_row)
+# query_time_row <- system.time({
+#     table_row <- dbGetQuery(con,
+#                             "SELECT COUNT(*) AS row_count
+#                             FROM highlights;" #count num rows
+#     )
+# })
+# print(query_time_row)
+#
+# query_time_col <- system.time({
+#     table_col <- dbGetQuery(con,
+#                             "SELECT COUNT(*) AS column_count
+#                             FROM information_schema.columns
+#                             WHERE table_name = 'highlights';" # count num cols
+#     )
+# })
+#
+#
+# print(query_time_col)
+#
+# write_csv(data_frame(table_row, table_col), file= "table_dimensions.csv")
+highlights_2025 <- dbGetQuery(con,
+                              "SELECT *
+                               FROM highlights
+                               WHERE created_at >= '2025-01-01' AND created_at <= '2025-06-30';")
 
-query_time_col <- system.time({
-    table_col <- dbGetQuery(con,
-                            "SELECT COUNT(*) AS column_count
-                            FROM information_schema.columns
-                            WHERE table_name = 'highlights';" # count num cols
-    )
-})
 
-
-print(query_time_col)
-
-write_csv(data_frame(table_row, table_col), file= "table_dimensions.csv")
 ###############################################################################
 # Insert Analysis code here
 
-
-
-
-
+library(tidyverse)
+str(highlights_2025)
+highlights_2025_color <- highlights_2025 %>%
+    group_by(color) %>%
+    count()
+print("Completed the counts by highlight color")
+write_csv("./highlights_2025_color.csv")
 
 
 ###############################################################################
