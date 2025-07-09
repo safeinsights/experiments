@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data
+      - ../models:/app/models
+      - ../config.yaml:/app/config.yaml
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4'
+        reservations:
+          memory: 4G
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  default:
+    driver: bridge

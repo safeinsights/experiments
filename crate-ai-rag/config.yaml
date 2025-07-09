@@ -1,0 +1,26 @@
+yaml
+# Model settings
+embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+llm_model: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"
+llm_file: "mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+
+# Vector database
+vector_db:
+  type: "chroma"
+  persist_directory: "./data/vector_db"
+  collection_name: "research_docs"
+
+# Document processing
+chunking:
+  chunk_size: 1000
+  chunk_overlap: 200
+  
+# API settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  
+# AWS settings
+aws:
+  region: "us-east-1"
+  ecr_repository: "research-code-assistant"
