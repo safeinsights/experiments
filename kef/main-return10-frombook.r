@@ -61,7 +61,7 @@ if (!dbIsValid(con)) {
 ###############################################################################
 # Summary Statistics Queries
 
-# Query 10 rows with a specific scope_id
+# Query 10 rows from a specific textbook - ie. a specific scope_id
 query_time <- system.time({
   scoped_highlights <- dbGetQuery(con,
     "SELECT * FROM highlights 
