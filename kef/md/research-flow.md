@@ -1,4 +1,4 @@
-## SafeInsights Research Workflow
+## SafeInsights Research Workflow V1
 
 ```mermaid
 ---
