@@ -1,4 +1,3 @@
-
 ```mermaid
 ---
 config:
@@ -13,7 +12,7 @@ flowchart TD
     REVP["DO reviews proposal<br/>(feasibility, impact, qualifications)"]
     APP-P{"Proposal approved?"}
     FB1["DO gives feedback"]
-    AGREE["Finish agreements <br/> Complete SI and DO requirements"]
+    AGREE["Finish agreements, IRB <br/> Complete SI and DO requirements"]
     RV1{Review needed?}
 
     EDITC["Create/edit/revise analysis code"]
