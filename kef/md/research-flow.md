@@ -1,3 +1,5 @@
+# SafeInsights YR2 Research Workflow
+
 ```mermaid
 ---
 config:
@@ -9,7 +11,7 @@ flowchart TD
     PROF["Create researcher profile"]
     EDITP["Create/Edit/Revise study proposal"]
     SUBP["Submit to DO via SI app"]
-    REVP["DO reviews proposal<br/>(feasibility, impact, qualifications)"]
+    REVP["DO reviews proposal<br/>(feasibility, impact, value, qualifications)"]
     APP-P{"Proposal approved?"}
     FB1["DO gives feedback"]
     AGREE["Finish agreements, IRB <br/> Complete SI and DO requirements"]
