@@ -107,6 +107,7 @@ flowchart TD
     class DOE,RUN enclave;
     class ABBR5,ABBR1,ABBR2,ABBR3,ABBR4,ABBR6,IP,AGRS info;
     class AGRS,PLA,ORG,IND,SLA,IRB info;
+    class LIV-I,REJECT,AGRS-I,IP-I,CRATE-DO-I info;
 
     %% Main proposal flow
     DISC --> KB --> PROF --> EDITP --> SUBP --> REVP --> APP-P
