@@ -21,7 +21,7 @@ The above steps occur completely in browser in [client.ts](client.ts) The only e
 
 ### usage
 
-run server: `npx tsx server.ts`
+run server: `pnpm exec tsx server.ts`
 
 open http://localhost:7080/
 

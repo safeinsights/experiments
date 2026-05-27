@@ -7,9 +7,9 @@ The [server.ts](server.ts) then reads the **public** key and uses that to valida
 
 ### usage
 
-run server: `npx tsx server.ts`
+run server: `pnpm exec tsx server.ts`
 
-make a request: `npx tsx request.ts`
+make a request: `pnpm exec tsx request.ts`
 
 
 #### The keys were generated using these commands:
