@@ -29,11 +29,13 @@ MAX_FILE_SIZE_BYTES), anything beyond the first 10 files (MAX_FILE_COUNT), and
 binary / non-UTF-8 files. The main code file is the one whose basename is 'main'
 (any extension), or the sole file when there is only one.
 
-The API key comes from ~/.claude/settings.json — the "apiKeyHelper": "echo <key>"
-field, unwrapped textually (a helper that is any other command is reported, not
-executed). $ANTHROPIC_API_KEY is never consulted, so a stale exported key cannot
-silently change which credential a run uses. Which field supplied the key is
-logged; the key itself is never logged or printed, only a redacted fingerprint.
+The API key comes from $ANTHROPIC_API_KEY when that is set and non-empty, and
+otherwise from ~/.claude/settings.json — its "env": {"ANTHROPIC_API_KEY": …} or
+top-level "ANTHROPIC_API_KEY" field, or the "apiKeyHelper": "echo <key>" field
+unwrapped textually (a helper that is any other command is reported, not
+executed). Which source supplied the key is logged, so a run under a stale
+exported key is diagnosable; the key itself is never logged or printed, only a
+redacted fingerprint.
 
 The structured result is printed as JSON to stdout; all logging goes to stderr.
 
@@ -434,11 +436,13 @@ def extract_result(resp, tool_name):
 
 
 # ---------------------------------------------------------------------------
-# API key resolution: --api-key, then $ANTHROPIC_API_KEY, then settings.json
+# API key resolution: $ANTHROPIC_API_KEY, then settings.json
 #
 # Every step is logged so a wrong-source run is diagnosable, but the key itself
 # is only ever logged through fingerprint() — a redacted prefix plus a length.
 # ---------------------------------------------------------------------------
+
+ENV_KEY_VAR = "ANTHROPIC_API_KEY"
 
 # Fields checked in settings.json, in order. apiKeyHelper is normally a shell
 # command that prints the key; the literal "echo <key>" form is unwrapped
@@ -497,27 +501,42 @@ def load_api_key_from_settings(path):
             return key, "settings.json field apiKeyHelper"
         return None, ("settings.json apiKeyHelper is a command, not an "
                       "'echo <key>' literal; run it yourself and export "
-                      "ANTHROPIC_API_KEY, or pass --api-key")
+                      "ANTHROPIC_API_KEY")
 
     return None, ("settings.json has no API key (checked %s)"
                   % ", ".join(SETTINGS_KEY_FIELDS))
 
 
 def resolve_api_key():
-    """Read the key from the settings file, logging each step.
+    """Resolve the key from $ANTHROPIC_API_KEY, falling back to the settings
+    file, logging each step.
 
-    $ANTHROPIC_API_KEY is deliberately NOT consulted: the settings file is the
-    single source of truth, so a stale exported key in one shell can't silently
-    send a run under different credentials than the next shell's."""
-    log("Resolving API key from the settings file (the environment is not consulted).")
+    The environment wins so a caller can override the configured credential for
+    one run without editing settings.json. Because that means a stale exported
+    key can change which credential a run uses, the chosen source is always
+    logged alongside the key's fingerprint."""
+    log("Resolving API key from $%s, then %s ..." % (ENV_KEY_VAR, SETTINGS_FILE))
+
+    env_key = os.environ.get(ENV_KEY_VAR)
+    if env_key and env_key.strip():
+        key = env_key.strip()
+        log("API key found in $%s (%s)." % (ENV_KEY_VAR, fingerprint(key)))
+        return key
+    if env_key is None:
+        log("$%s is not set; falling back to the settings file." % ENV_KEY_VAR)
+    else:
+        log("$%s is set but empty; falling back to the settings file."
+            % ENV_KEY_VAR)
+
     key, detail = load_api_key_from_settings(SETTINGS_FILE)
     if key:
         log("API key found at %s (%s)." % (detail, fingerprint(key)))
         return key
 
     log("API key not resolved: %s" % detail)
-    die(1, "No API key in %s — expected {\"apiKeyHelper\": \"echo <key>\"}."
-        % SETTINGS_FILE)
+    die(1, "No API key: $%s is unset or empty and %s has none — export the "
+           "variable or add {\"apiKeyHelper\": \"echo <key>\"} to the settings "
+           "file." % (ENV_KEY_VAR, SETTINGS_FILE))
 
 
 # ---------------------------------------------------------------------------
@@ -534,9 +553,10 @@ def read_file(path, label):
 
 def build_arg_parser():
     """Only the two prompt overrides are configurable. Everything else — the
-    model, the caps, the tool schema, the scanned directory, the API key source
-    — is a constant at the top of this file, so a run is reproducible from the
-    file alone rather than from someone's shell history."""
+    model, the caps, the tool schema, the scanned directory — is a constant at
+    the top of this file, so a run is reproducible from the file alone rather
+    than from someone's shell history. The credential is the exception: it comes
+    from $ANTHROPIC_API_KEY or the settings file, and its source is logged."""
     p = argparse.ArgumentParser(
         prog="code_summary.py",
         description="Claude review agent: reviews the code files in the current "
