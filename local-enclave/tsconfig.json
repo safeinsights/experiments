@@ -1,0 +1,12 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "types": ["node"],
+        "lib": ["es2022", "dom"],
+        "target": "es2022",
+        "moduleResolution": "bundler"
+    },
+    "include": ["./**/*.ts"],
+    "exclude": ["node_modules", "state"]
+}

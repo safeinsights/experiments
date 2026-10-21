@@ -1,0 +1,51 @@
+{
+    // Attach to the local enclave stack (`./dev-enclave.ts up`) with this folder open in VS Code; the
+    // apps are expected in sibling checkouts (SETUP_APP_DIR, TOA_DIR). enclave-dev.code-workspace
+    // opens all three repos together with the same configurations.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach: setup-app (enclave stack)",
+            "type": "node",
+            "request": "attach",
+            "address": "localhost",
+            "port": 9229,
+            "localRoot": "${workspaceFolder}/../../setup-app",
+            "remoteRoot": "/home/node/code",
+            "restart": true,
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Attach: trusted-output-app (enclave stack)",
+            "type": "node",
+            "request": "attach",
+            "address": "localhost",
+            "port": 9230,
+            "localRoot": "${workspaceFolder}/../../trusted-output-app",
+            "remoteRoot": "/home/node/app",
+            "restart": true,
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Attach: management app stand-in (enclave stack)",
+            "type": "node",
+            "request": "attach",
+            "address": "localhost",
+            "port": 9231,
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/app/local-enclave",
+            "restart": true,
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Attach: enclave stack (all three)",
+            "configurations": [
+                "Attach: setup-app (enclave stack)",
+                "Attach: trusted-output-app (enclave stack)",
+                "Attach: management app stand-in (enclave stack)"
+            ]
+        }
+    ]
+}

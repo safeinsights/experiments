@@ -1,0 +1,73 @@
+# The local enclave stack. `dev-enclave.ts up` writes the env files under state/ and runs this with
+# --project-directory local-enclave --env-file state/compose.env; see README.md. Every service listens
+# for the Node inspector on 9229 inside; the published ports match .vscode/launch.json.
+name: enclave-dev
+
+services:
+    # Management app stand-in (standin/). Built from the experiments repo (Dockerfile here), with the
+    # repo bind-mounted for hot reload and the image's node_modules kept in place.
+    bma:
+        build:
+            context: ..
+            dockerfile: local-enclave/Dockerfile
+        command: ['node_modules/.bin/tsx', 'watch', '--inspect=0.0.0.0:9229', 'local-enclave/standin/main.ts']
+        user: '${BMA_USER:-0}'
+        env_file: ./state/bma.env
+        volumes:
+            - ..:/app
+            - /app/node_modules
+        ports:
+            - '127.0.0.1:${BMA_PORT:-4000}:4000'
+            - '127.0.0.1:${BMA_DEBUG_PORT:-9231}:9229'
+        healthcheck:
+            test:
+                - CMD
+                - node
+                - -e
+                - "fetch('http://127.0.0.1:4000/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+            interval: 3s
+            timeout: 5s
+            retries: 30
+
+    # trusted-output-app from a sibling checkout (TOA_DIR), hot-reloaded through its `dev` target.
+    toa:
+        build:
+            context: ${TOA_DIR}
+            target: dev
+        command: ['pnpm', 'exec', 'tsx', 'watch', '--inspect=0.0.0.0:9229', 'src/server.ts']
+        env_file: ./state/toa.env
+        volumes:
+            - ${TOA_DIR}/src:/home/node/app/src
+        ports:
+            - '127.0.0.1:3002:3002'
+            - '127.0.0.1:${TOA_DEBUG_PORT:-9230}:9229'
+        healthcheck:
+            test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:3002/api/health']
+            interval: 3s
+            timeout: 5s
+            retries: 30
+        depends_on:
+            bma:
+                condition: service_healthy
+
+    # setup-app in DOCKER mode from a sibling checkout (SETUP_APP_DIR). Runs as root so it can use the
+    # daemon socket (under rootless Docker that is the host user). Research containers it starts join
+    # this project's network.
+    setup-app:
+        build:
+            context: ${SETUP_APP_DIR}
+        command: ['pnpm', 'exec', 'tsx', 'watch', '--inspect=0.0.0.0:9229', 'src/scripts/poll.ts']
+        user: '0'
+        env_file: ./state/setup-app.env
+        ports:
+            - '127.0.0.1:${SETUP_APP_DEBUG_PORT:-9229}:9229'
+        volumes:
+            - ${SETUP_APP_DIR}/src:/home/node/code/src
+            - ${DOCKER_SOCK}:/var/run/docker.sock
+        depends_on:
+            toa:
+                condition: service_healthy
+
+networks:
+    default:
+        name: enclave-dev
