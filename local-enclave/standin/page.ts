@@ -23,6 +23,7 @@ export type PageModel = {
     samples: Sample[]
     /** Suggestions for a code job's base image; the first is the default. */
     baseImages: string[]
+    setupApp?: { dir: string; forwardsEnv: boolean }
     authFailures: AuthFailure[]
     jobs: JobView[]
 }
@@ -292,6 +293,10 @@ export function renderPage(model: PageModel): string {
     const jobs = model.jobs.length
         ? model.jobs.map(renderJob).join('')
         : '<p class="muted">No jobs yet. Run a sample above.</p>'
+    const setupAppWarning =
+        model.setupApp && !model.setupApp.forwardsEnv
+            ? `<section class="warn"><h3>This setup-app cannot forward data variables</h3><p>The checkout at <code>${escapeHtml(model.setupApp.dir)}</code> has no <code>RESEARCH_CONTAINER_ENV</code> support, so research containers get no AWS credentials or <code>HIGHLIGHTS_*</code> variables: the tutor sample is unavailable and pasted code cannot read S3. Point <code>SETUP_APP_DIR</code> at a checkout of setup-app's <code>local-dev-enclave</code> branch and start again.</p></section>`
+            : ''
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -371,6 +376,7 @@ export function renderPage(model: PageModel): string {
     <button type="submit">Build and run</button>
   </form>
 </section>
+${setupAppWarning}
 ${failures}
 ${jobs}
 <script>

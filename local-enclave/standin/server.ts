@@ -18,6 +18,8 @@ export type StandinOptions = {
     samples: () => Sample[]
     /** Suggestions for the base image of a code job; the first one is the default. */
     baseImages?: string[]
+    /** Shown as a warning when the setup-app in use cannot forward data variables to research containers. */
+    setupApp?: { dir: string; forwardsEnv: boolean }
     log?: (line: string) => void
 }
 
@@ -162,6 +164,7 @@ export function createStandin(opts: StandinOptions): Server {
                 reviewerFingerprint,
                 samples: opts.samples(),
                 baseImages: opts.baseImages?.length ? opts.baseImages : ['python:3.12-slim'],
+                setupApp: opts.setupApp,
                 authFailures,
                 jobs,
             }),

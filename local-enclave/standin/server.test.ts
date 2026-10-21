@@ -32,6 +32,7 @@ beforeAll(async () => {
         samples: () => [
             { name: 'offline', image: 'localhost/enclave-dev/sample-offline:latest', description: 'offline' },
         ],
+        setupApp: { dir: '/checkouts/setup-app', forwardsEnv: false },
         log: () => {},
     })
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
@@ -68,6 +69,12 @@ describe('enclave authentication', () => {
     it('lists auth failures on the page', async () => {
         const html = await (await fetch(`${base}/`)).text()
         expect(html).toContain('Enclave auth failures')
+    })
+
+    it('warns when the setup-app in use cannot forward data variables', async () => {
+        const html = await (await fetch(`${base}/`)).text()
+        expect(html).toContain('This setup-app cannot forward data variables')
+        expect(html).toContain('/checkouts/setup-app')
     })
 })
 

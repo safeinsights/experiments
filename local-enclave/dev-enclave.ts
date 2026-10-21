@@ -98,9 +98,12 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
     say(
         `docker ${docker.serverVersion} (compose ${docker.composeVersion}), socket ${docker.socket}${docker.rootless ? ', rootless' : ''}`,
     )
-    say(
-        `setup-app from ${settings.setupAppDir}${forwardsEnv ? '' : ' (no RESEARCH_CONTAINER_ENV support: AWS data will not reach research containers)'}`,
-    )
+    say(`setup-app from ${settings.setupAppDir}`)
+    if (!forwardsEnv) {
+        say('WARNING: this setup-app checkout has no RESEARCH_CONTAINER_ENV support, so research containers get no AWS')
+        say('  credentials or data variables. Use the local-dev-enclave branch (SETUP_APP_DIR=/path/to/that checkout).')
+        say('  The tutor sample is skipped; pasted code cannot read S3 either.')
+    }
     say(`trusted-output-app from ${settings.toaDir}`)
 
     const { keys, generated } = ensureKeys(flags.freshKeys)
@@ -161,6 +164,8 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
         VERIFY_JWT: String(flags.verifyJwt),
         STATE_DIR: '/app/local-enclave/state',
         CODE_BASE_IMAGES: ['python:3.12-slim', settings.tutorBaseImage].filter(Boolean).join(','),
+        SETUP_APP_DIR: settings.setupAppDir,
+        SETUP_APP_FORWARDS_ENV: String(forwardsEnv),
     })
     writeEnvFile(path.join(STATE_DIR, 'compose.env'), {
         SETUP_APP_DIR: settings.setupAppDir,
@@ -173,7 +178,7 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
         BMA_DEBUG_PORT: settings.debugPorts.bma,
     })
 
-    if (flags.samples) await buildSamples(awsReady)
+    if (flags.samples) await buildSamples(awsReady && forwardsEnv, forwardsEnv)
 
     say(`starting the stack; page at ${pageUrl()} (Ctrl-C stops everything)`)
     say(
@@ -190,7 +195,7 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
     return code === 130 ? 0 : code
 }
 
-async function buildSamples(awsReady: boolean): Promise<void> {
+async function buildSamples(awsReady: boolean, forwardsEnv: boolean): Promise<void> {
     const samples: Sample[] = []
     const offline = path.join(LOCAL_DIR, 'samples', 'offline')
     say('building the offline sample image')
@@ -211,6 +216,8 @@ async function buildSamples(awsReady: boolean): Promise<void> {
 
     if (!settings.tutorBaseImage) {
         say('SAMPLE_TUTOR_BASE_IMAGE is empty; skipping the tutor sample')
+    } else if (!forwardsEnv) {
+        say('skipping the tutor sample: this setup-app cannot hand it the S3 variables (see the warning above)')
     } else if (await tutorBaseAvailable()) {
         say(`building the tutor sample on ${settings.tutorBaseImage}`)
         if (

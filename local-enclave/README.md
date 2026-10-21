@@ -20,8 +20,9 @@ From the repo root the same commands are `npm run enclave -- up` and so on; `npm
 - `npm install` in the experiments repo root.
 - `setup-app` and `trusted-output-app` checkouts next to the experiments repo, or `SETUP_APP_DIR`
   and `TOA_DIR` pointing at them. setup-app's DOCKER mode forwards the AWS data variables only
-  from its `local-dev-enclave` branch onwards (`RESEARCH_CONTAINER_ENV`); `up` says so when the
-  checkout lacks it, and everything but the `tutor` sample still works.
+  from its `local-dev-enclave` branch onwards (`RESEARCH_CONTAINER_ENV`). With a checkout that
+  lacks it, `up` warns, skips the `tutor` sample and the page shows a banner; the offline sample
+  and pasted code still run, but nothing can read S3.
 - Optional, for the `tutor` sample: a Harbor login (see below) and an AWS SSO session.
 
 ## What `up` does

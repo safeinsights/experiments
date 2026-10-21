@@ -37,6 +37,9 @@ const server = createStandin({
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
+    setupApp: process.env.SETUP_APP_DIR
+        ? { dir: process.env.SETUP_APP_DIR, forwardsEnv: process.env.SETUP_APP_FORWARDS_ENV !== 'false' }
+        : undefined,
 })
 
 server.listen(port, '0.0.0.0', () => {
