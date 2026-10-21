@@ -99,10 +99,10 @@ localhost: setup-app on 9229, trusted-output-app on 9230, the stand-in on 9231
 (`SETUP_APP_DEBUG_PORT`, `TOA_DEBUG_PORT`, `BMA_DEBUG_PORT` to change them). Open
 `enclave-dev.code-workspace` in VS Code: it holds this directory, setup-app and the
 trusted-output-app as workspace folders and an attach configuration for each service, plus a
-compound that attaches to all three. `.vscode/launch.json` has the same configurations for when
-only this directory is open. Breakpoints in the apps' `src/` work through tsx's source maps, and
-`restart: true` reattaches after a hot reload. Both assume the sibling-checkout layout; edit
-`localRoot` (or the workspace folder paths) otherwise.
+compound that attaches to all three. The repo's `.vscode/launch.json` has the same configurations
+for when the experiments repo itself is open. Breakpoints in the apps' `src/` work through tsx's
+source maps, and `restart: true` reattaches after a hot reload. Both assume the sibling-checkout
+layout; edit `localRoot` (or the workspace folder paths) otherwise.
 
 The stand-in implements what setup-app and the TOA call on the real management app:
 `GET /api/studies/ready`, `PUT /api/job/:id`, `GET /api/job/:id/status`, `GET /api/job/:id/keys`,
