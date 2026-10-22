@@ -8,3 +8,5 @@ _William Blake_
 This repository is a place for SI staff to easily create quick experimental code for testing and demonstrating concepts.
 
 If you have some quick code that is useful you'd like to share, add it in a subdirectory.
+
+- `local-enclave/`: run setup-app, the trusted-output-app and a stand-in for the management app together on a laptop (`./local-enclave/dev-enclave.ts up`); see its README.

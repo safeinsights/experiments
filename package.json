@@ -4,7 +4,12 @@
   "description": "test various things",
   "main": "server.js",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "enclave": "tsx local-enclave/dev-enclave.ts",
+    "enclave:test": "vitest run --config local-enclave/vitest.config.ts",
+    "enclave:typecheck": "tsc -p local-enclave",
+    "enclave:format": "prettier --write local-enclave"
+  },
   "author": "SafeInsights",
   "license": "MIT",
   "packageManager": "pnpm@11.1.3",
@@ -24,5 +29,11 @@
     "node-fetch": "^3.3.2",
     "tsx": "^4.19.1",
     "vite": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   }
 }

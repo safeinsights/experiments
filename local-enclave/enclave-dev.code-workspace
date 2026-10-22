@@ -1,0 +1,64 @@
+{
+    "folders": [
+        {
+            "name": "local-enclave",
+            "path": ".",
+        },
+        {
+            "name": "setup-app",
+            "path": "../../setup-app",
+        },
+        {
+            "name": "trusted-output-app",
+            "path": "../../trusted-output-app",
+        },
+    ],
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Attach: setup-app (enclave stack)",
+                "type": "node",
+                "request": "attach",
+                "address": "localhost",
+                "port": 9229,
+                "localRoot": "${workspaceFolder:setup-app}",
+                "remoteRoot": "/home/node/code",
+                "restart": true,
+                "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            },
+            {
+                "name": "Attach: trusted-output-app (enclave stack)",
+                "type": "node",
+                "request": "attach",
+                "address": "localhost",
+                "port": 9230,
+                "localRoot": "${workspaceFolder:trusted-output-app}",
+                "remoteRoot": "/home/node/app",
+                "restart": true,
+                "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            },
+            {
+                "name": "Attach: management app stand-in (enclave stack)",
+                "type": "node",
+                "request": "attach",
+                "address": "localhost",
+                "port": 9231,
+                "localRoot": "${workspaceFolder:local-enclave}",
+                "remoteRoot": "/app/local-enclave",
+                "restart": true,
+                "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            },
+        ],
+        "compounds": [
+            {
+                "name": "Attach: enclave stack (all three)",
+                "configurations": [
+                    "Attach: setup-app (enclave stack)",
+                    "Attach: trusted-output-app (enclave stack)",
+                    "Attach: management app stand-in (enclave stack)",
+                ],
+            },
+        ],
+    },
+}
