@@ -20,7 +20,10 @@ import {
     HarnessError,
     IMAGE_PREFIX,
     KEYS_DIR,
+    LEGACY_IMAGE_PREFIX,
     LOCAL_DIR,
+    REGISTRY_PORT,
+    REGISTRY_VOLUME,
     SAMPLES_FILE,
     STATE_DIR,
     bindMountUser,
@@ -48,7 +51,7 @@ const USAGE = `usage: ./dev-enclave.ts <up|run|down|clean> [options]   (or: npm 
   down
   clean  [--keys] [--images]
 
-environment: SETUP_APP_DIR, TOA_DIR, BMA_PORT, MEMBER_ID, AWS_PROFILE, SAMPLE_TUTOR_BASE_IMAGE,
+environment: SETUP_APP_DIR, TOA_DIR, BMA_PORT, REGISTRY_PORT (5055), MEMBER_ID, AWS_PROFILE, SAMPLE_TUTOR_BASE_IMAGE,
              HIGHLIGHTS_S3_BUCKET_NAME, HIGHLIGHTS_S3_BUCKET_PREFIX, HIGHLIGHTS_S3_BUCKET_REGION,
              SETUP_APP_DEBUG_PORT (9229), TOA_DEBUG_PORT (9230), BMA_DEBUG_PORT (9231)`
 
@@ -166,6 +169,7 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
         CODE_BASE_IMAGES: ['python:3.12-slim', settings.tutorBaseImage].filter(Boolean).join(','),
         SETUP_APP_DIR: settings.setupAppDir,
         SETUP_APP_FORWARDS_ENV: String(forwardsEnv),
+        CODE_IMAGE_PREFIX: `${IMAGE_PREFIX}/code`,
     })
     writeEnvFile(path.join(STATE_DIR, 'compose.env'), {
         SETUP_APP_DIR: settings.setupAppDir,
@@ -173,12 +177,16 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
         DOCKER_SOCK: docker.socket,
         BMA_USER: bindMountUser(docker.rootless),
         BMA_PORT: String(settings.port),
+        REGISTRY_PORT,
         SETUP_APP_DEBUG_PORT: settings.debugPorts.setupApp,
         TOA_DEBUG_PORT: settings.debugPorts.toa,
         BMA_DEBUG_PORT: settings.debugPorts.bma,
     })
 
-    if (flags.samples) await buildSamples(awsReady && forwardsEnv, forwardsEnv)
+    if (flags.samples) {
+        startRegistry()
+        await buildSamples(awsReady && forwardsEnv, forwardsEnv)
+    }
 
     say(`starting the stack; page at ${pageUrl()} (Ctrl-C stops everything)`)
     say(
@@ -193,6 +201,16 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
     down()
     // 130 is compose reporting the Ctrl-C it received, which is the normal way to stop the stack.
     return code === 130 ? 0 : code
+}
+
+/** The registry has to be up before anything is built, since every built image is pushed to it. */
+function startRegistry(): void {
+    say(`starting the image registry on 127.0.0.1:${REGISTRY_PORT}`)
+    if (run('docker', [...composeArgs(), 'up', '--detach', '--wait', 'registry']) !== 0) {
+        throw new HarnessError(
+            `the image registry did not start; is port ${REGISTRY_PORT} taken? (REGISTRY_PORT picks another)`,
+        )
+    }
 }
 
 async function buildSamples(awsReady: boolean, forwardsEnv: boolean): Promise<void> {
@@ -348,11 +366,13 @@ function clean(flags: { keys: boolean; images: boolean }): number {
         say('removed keys; the next `up` generates new ones')
     }
     if (flags.images) {
-        const filters = [`reference=${IMAGE_PREFIX}/*`, `reference=${IMAGE_PREFIX}-*`].flatMap((f) => ['--filter', f])
+        const filters = [IMAGE_PREFIX, LEGACY_IMAGE_PREFIX].flatMap((prefix) => ['--filter', `reference=${prefix}/*`])
         const images = tryCapture('docker', ['images', '-q', ...filters])
         const ids = [...new Set(images.out.split('\n').filter(Boolean))]
         if (ids.length) run('docker', ['rmi', '-f', ...ids])
         say(`removed ${ids.length} sample image(s)`)
+        if (tryCapture('docker', ['volume', 'rm', REGISTRY_VOLUME]).ok)
+            say(`removed the registry volume ${REGISTRY_VOLUME}`)
     }
     if (existsSync(STATE_DIR) && readdirSync(STATE_DIR).length === 0)
         rmSync(STATE_DIR, { recursive: true, force: true })

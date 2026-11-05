@@ -35,16 +35,18 @@ From the repo root the same commands are `npm run enclave -- up` and so on; `npm
    `aws configure export-credentials`. If that fails you get the `aws sso login` hint and the stack
    still starts; only the `tutor` sample needs it. `--no-aws` skips the attempt.
 3. Writes `state/{setup-app,toa,bma,compose}.env` (gitignored, mode 0600).
-4. Builds the sample images: `localhost/enclave-dev/sample-offline:{latest,fail}` always, and
-   `localhost/enclave-dev/sample-tutor:latest` when its Harbor base image is readable.
+4. Starts the stack's image registry (`registry` below), then builds the sample images and pushes them
+   to it: `127.0.0.1:5055/enclave-dev/sample-offline:{latest,fail}` always, and
+   `127.0.0.1:5055/enclave-dev/sample-tutor:latest` when its Harbor base image is readable.
 5. `docker compose up --build` with the three services below. Ctrl-C stops them and removes any
    research containers setup-app left behind.
 
-| service     | what                                                                            | reachable at                 |
-| ----------- | ------------------------------------------------------------------------------- | ---------------------------- |
-| `bma`       | management app stand-in (`standin/`), own image, repo bind-mounted, `tsx watch` | http://localhost:4000 (page) |
-| `toa`       | trusted-output-app `dev` target, `src/` bind-mounted for hot reload             | http://localhost:3002        |
-| `setup-app` | the setup-app checkout, `src/` bind-mounted, `tsx watch src/scripts/poll.ts`    | logs only                    |
+| service     | what                                                                                      | reachable at                 |
+| ----------- | ----------------------------------------------------------------------------------------- | ---------------------------- |
+| `bma`       | management app stand-in (`standin/`), own image, repo bind-mounted, `tsx watch`           | http://localhost:4000 (page) |
+| `toa`       | trusted-output-app `dev` target, `src/` bind-mounted for hot reload                       | http://localhost:3002        |
+| `setup-app` | the setup-app checkout, `src/` bind-mounted, `tsx watch src/scripts/poll.ts`              | logs only                    |
+| `registry`  | `registry:2.8.3`, the images setup-app pulls; layers in the `enclave-dev-registry` volume | 127.0.0.1:5055               |
 
 They share the `enclave-dev` network; research containers join it through
 `RESEARCH_CONTAINER_NETWORK`, which is how they reach `http://toa:3002`. Nothing needs to reach the
@@ -75,7 +77,8 @@ Trigger a job with the sample buttons, with any image name, or from a terminal:
 The second form on the page takes a base image (default `python:3.12-slim`; the OpenStax
 `python-base` is suggested when its tag is configured) and a Python script. Submitting it creates a
 job at `JOB-PACKAGING`, like the containerizer step in the real pipeline. `./dev-enclave.ts up`
-polls the stand-in for such jobs and builds `localhost/enclave-dev/code-<id>:latest` on the host
+polls the stand-in for such jobs, builds `127.0.0.1:5055/enclave-dev/code-<id>:latest` on the host and
+pushes it to the registry
 (`samples/code/Dockerfile`: the base image, the script as `main.py`, and `runner.py`), then
 the job becomes `JOB-READY` and setup-app runs it as usual. A failed build shows up as
 `JOB-ERRORED` with the build log on the job card.
@@ -108,6 +111,26 @@ The stand-in implements what setup-app and the TOA call on the real management a
 `GET /api/studies/ready`, `PUT /api/job/:id`, `GET /api/job/:id/status`, `GET /api/job/:id/keys`,
 `POST /api/job/:id/results`, with RS256 JWT verification against `enclave.pub.pem` (`--no-verify-jwt`
 turns failures into warnings). `GET /jobs.json` dumps its state.
+
+### Images and the registry
+
+setup-app pulls a job's image before it creates the container, as it does from Harbor in a real
+enclave, so every image a job names has to be pullable. `up` therefore runs a registry in the compose
+project and pushes everything it builds there. The registry keeps its layers on disk in the
+`enclave-dev-registry` volume, so they survive `down` and later pushes only send what changed;
+`clean --images` removes the volume with the images. To run an image of your own, push it there first:
+
+```
+docker tag my-study 127.0.0.1:5055/enclave-dev/my-study:latest
+docker push 127.0.0.1:5055/enclave-dev/my-study:latest
+./dev-enclave.ts run --image 127.0.0.1:5055/enclave-dev/my-study:latest
+```
+
+Use `127.0.0.1`, not `localhost`, in image names. Docker Desktop's daemon resolves `localhost` to `::1`
+inside its VM, where connections are dropped rather than refused, so each pull of a `localhost/...`
+name stalls on a 30-second dial timeout per attempt (HTTPS, then HTTP): about a minute per job before
+setup-app gives up on the pull and runs whatever copy is local. Images used to be built locally as
+`localhost/enclave-dev/...`, which is why every job sat at `JOB-READY` for a minute.
 
 ## Sample data in AWS
 
@@ -144,6 +167,7 @@ time of writing. List tags with the Harbor UI or
 | ----------------------------- | ----------------------------- | -------------------------------------- |
 | `TOA_DIR`                     | `../trusted-output-app`       | trusted-output-app checkout            |
 | `BMA_PORT`                    | `4000`                        | host port of the stand-in page         |
+| `REGISTRY_PORT`               | `5055`                        | host port of the image registry        |
 | `MEMBER_ID`                   | `openstax`                    | JWT issuer both apps send              |
 | `AWS_PROFILE`                 | `ose-dev`                     | profile to export credentials from     |
 | `SAMPLE_TUTOR_BASE_IMAGE`     | newest `openstax/python-base` | base for the tutor sample              |
@@ -166,6 +190,9 @@ time of writing. List tags with the Harbor UI or
   pulled; the message carries Docker's reason.
 - **`Could not decrypt`.** The TOA encrypted for keys the stand-in did not hand out (stale
   container after `--fresh-keys`), or the encryption format changed upstream. The raw zip is linked.
+- **A job waits about a minute at JOB-READY.** Its image is named `localhost/...`; see "Images and the
+  registry" above. Push it to `127.0.0.1:5055/...` instead.
+- **`the image registry did not start`.** Something else uses port 5055: `REGISTRY_PORT=5056 ./dev-enclave.ts up`.
 - **Port 4000 is taken** (the real management app uses it too): `BMA_PORT=4100 ./dev-enclave.ts up`.
 - **Rootless Docker.** Containers that need the daemon socket or write to `state/` run as root
   inside, which is your own user outside. Files under `state/` stay yours.

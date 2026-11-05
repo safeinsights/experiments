@@ -30,7 +30,7 @@ beforeAll(async () => {
         verifyJwt: true,
         store,
         samples: () => [
-            { name: 'offline', image: 'localhost/enclave-dev/sample-offline:latest', description: 'offline' },
+            { name: 'offline', image: '127.0.0.1:5055/enclave-dev/sample-offline:latest', description: 'offline' },
         ],
         setupApp: { dir: '/checkouts/setup-app', forwardsEnv: false },
         log: () => {},
@@ -87,7 +87,7 @@ describe('the enclave job flow', () => {
         }
         expect(ready.jobs.find((j) => j.jobId === jobId)).toMatchObject({
             title: 'Flow test',
-            containerLocation: 'localhost/enclave-dev/sample-offline:latest',
+            containerLocation: '127.0.0.1:5055/enclave-dev/sample-offline:latest',
             status: 'JOB-READY',
         })
 
@@ -187,7 +187,7 @@ describe('the enclave job flow', () => {
             image: string
             build: { status: string; baseImage: string; code: string }
         }
-        expect(job.image).toMatch(/^localhost\/enclave-dev\/code-[0-9a-f]{8}:latest$/)
+        expect(job.image).toMatch(/^127\.0\.0\.1:5055\/enclave-dev\/code-[0-9a-f]{8}:latest$/)
         expect(job.build).toMatchObject({ status: 'pending', baseImage: 'python:3.12-slim', code: 'print(1)' })
 
         const readyUrl = `${base}/api/studies/ready`
@@ -210,7 +210,7 @@ describe('the enclave job flow', () => {
         const done = await fetch(`${base}/builds/${job.jobId}/done`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ok: true, log: 'naming to localhost/enclave-dev/code-x:latest done' }),
+            body: JSON.stringify({ ok: true, log: 'naming to 127.0.0.1:5055/enclave-dev/code-x:latest done' }),
         })
         expect(done.status).toBe(200)
         expect(await (await fetch(`${base}/api/job/${job.jobId}/status`, { headers: bearer() })).json()).toEqual({
@@ -262,5 +262,23 @@ describe('the enclave job flow', () => {
             body: '{"sample":"nope"}',
         })
         expect(unknownSample.status).toBe(400)
+    })
+})
+
+describe('JobStore', () => {
+    it('names code-job images with the prefix it was given', () => {
+        const scratch = mkdtempSync(path.join(tmpdir(), 'jobstore-'))
+        try {
+            const store = new JobStore(
+                path.join(scratch, 'jobs.json'),
+                path.join(scratch, 'jobs'),
+                '127.0.0.1:6000/enclave-dev/code',
+            )
+            expect(store.create({ code: 'print(1)' }).image).toMatch(
+                /^127\.0\.0\.1:6000\/enclave-dev\/code-[0-9a-f]{8}:latest$/,
+            )
+        } finally {
+            rmSync(scratch, { recursive: true, force: true })
+        }
     })
 })
