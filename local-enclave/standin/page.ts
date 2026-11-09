@@ -359,7 +359,7 @@ export function renderPage(model: PageModel): string {
   <p class="muted">A job appears in <code>GET /api/studies/ready</code> immediately; setup-app picks it up on its next poll.</p>
   ${sampleButtons || '<p class="muted">No sample images built yet (run <code>dev-enclave.ts up</code>).</p>'}
   <form method="post" action="/jobs" class="custom">
-    <input name="image" placeholder="any image, e.g. localhost/enclave-dev/sample-offline:latest" required>
+    <input name="image" placeholder="any image setup-app can pull${model.samples[0] ? `, e.g. ${escapeHtml(model.samples[0].image)}` : ''}" required>
     <input name="title" placeholder="title (optional)">
     <button type="submit">Run custom image</button>
   </form>

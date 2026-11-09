@@ -36,7 +36,8 @@ export type Job = {
     build?: Build
 }
 
-export const CODE_IMAGE_PREFIX = 'localhost/enclave-dev/code'
+/** Default name stem for code-job images; `up` passes the real one (with the registry port) as CODE_IMAGE_PREFIX. */
+export const CODE_IMAGE_PREFIX = '127.0.0.1:5055/enclave-dev/code'
 
 export type JobListener = (job: Job) => void
 
@@ -51,6 +52,7 @@ export class JobStore {
     constructor(
         readonly file: string,
         readonly jobsDir: string,
+        readonly codeImagePrefix: string = CODE_IMAGE_PREFIX,
     ) {
         if (existsSync(file)) {
             const parsed = JSON.parse(readFileSync(file, 'utf8')) as { jobs: Job[] }
@@ -81,7 +83,7 @@ export class JobStore {
             jobId,
             studyId: randomUUID(),
             title: input.title?.trim() || `Job ${jobId.slice(0, 8)}`,
-            image: code ? `${CODE_IMAGE_PREFIX}-${jobId.slice(0, 8)}:latest` : input.image!,
+            image: code ? `${this.codeImagePrefix}-${jobId.slice(0, 8)}:latest` : input.image!,
             researcherId: 'local-dev-researcher',
             requestedAt: now,
             statuses: initial.map((status) => ({ status, at: now })),

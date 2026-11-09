@@ -12,7 +12,18 @@ export const REPO_ROOT = path.resolve(LOCAL_DIR, '..')
 export const STATE_DIR = path.join(LOCAL_DIR, 'state')
 export const KEYS_DIR = path.join(STATE_DIR, 'keys')
 export const SAMPLES_FILE = path.join(STATE_DIR, 'samples.json')
-export const IMAGE_PREFIX = 'localhost/enclave-dev'
+/** Host port of the compose project's registry: built images are pushed there and setup-app pulls them from it. */
+export const REGISTRY_PORT = process.env.REGISTRY_PORT ?? '5055'
+/**
+ * Where the stack's images live. 127.0.0.1, not localhost: Docker Desktop's daemon resolves localhost to ::1 in
+ * its VM, where connections are dropped rather than refused, so every pull of a localhost name waited out a 30s
+ * dial timeout per attempt (HTTPS, then HTTP) before setup-app could start the job.
+ */
+export const IMAGE_PREFIX = `127.0.0.1:${REGISTRY_PORT}/enclave-dev`
+/** The registry's storage (compose.yaml); `clean --images` removes it along with the images. */
+export const REGISTRY_VOLUME = 'enclave-dev-registry'
+/** The local-only names images had before the registry; `clean --images` still removes them. */
+export const LEGACY_IMAGE_PREFIX = 'localhost/enclave-dev'
 export const DEFAULT_TUTOR_BASE_IMAGE = 'harbor.safeinsights.org/openstax/python-base:3.12-2026-10-01-ed858d81'
 
 export const say = (line: string): void => console.log(`[dev-enclave] ${line}`)
@@ -197,7 +208,14 @@ export function buildImage(tag: string, context: string, buildArgs: Record<strin
         ...Object.entries(buildArgs).flatMap(([k, v]) => ['--build-arg', `${k}=${v}`]),
         context,
     ]
-    return run('docker', args) === 0
+    return run('docker', args) === 0 && pushImage(tag)
+}
+
+/** Push to the stack's registry, which `up` starts before building anything. */
+export function pushImage(tag: string): boolean {
+    const pushed = tryCapture('docker', ['push', tag])
+    if (!pushed.ok) say(`push of ${tag} failed: ${pushed.err.split('\n').filter(Boolean).at(-1) ?? 'unknown error'}`)
+    return pushed.ok
 }
 
 export type DockerAuth = { username: string; password: string; serveraddress: string }
@@ -243,14 +261,14 @@ export type CodeBuild = { jobId: string; image: string; baseImage: string; code:
  * runner that speaks the trusted-output-app protocol (samples/code). Built here on the host
  * because that is where Docker and any registry login live.
  */
-export function buildCodeImage(build: CodeBuild): Promise<{ ok: boolean; log: string }> {
+export async function buildCodeImage(build: CodeBuild): Promise<{ ok: boolean; log: string }> {
     const context = path.join(STATE_DIR, 'builds', build.jobId)
     mkdirSync(context, { recursive: true })
     const template = path.join(LOCAL_DIR, 'samples', 'code')
     copyFileSync(path.join(template, 'Dockerfile'), path.join(context, 'Dockerfile'))
     copyFileSync(path.join(template, 'runner.py'), path.join(context, 'runner.py'))
     writeFileSync(path.join(context, 'main.py'), build.code.endsWith('\n') ? build.code : `${build.code}\n`)
-    return captureAsync('docker', [
+    const built = await captureAsync('docker', [
         'build',
         '--progress=plain',
         '--build-arg',
@@ -259,6 +277,9 @@ export function buildCodeImage(build: CodeBuild): Promise<{ ok: boolean; log: st
         build.image,
         context,
     ])
+    if (!built.ok) return built
+    const pushed = await captureAsync('docker', ['push', build.image])
+    return { ok: pushed.ok, log: `${built.log}\n${pushed.log}` }
 }
 
 const sleep = (ms: number, signal: AbortSignal): Promise<void> =>

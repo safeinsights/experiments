@@ -4,6 +4,22 @@
 name: enclave-dev
 
 services:
+    # Where `up` pushes the images it builds and setup-app pulls them from, as it would from Harbor. Published
+    # on 127.0.0.1 (see IMAGE_PREFIX in harness.ts for why not localhost); the Docker daemon is the client, so
+    # only the published port matters. Layers are kept on disk in the registry volume, so they survive `down`
+    # and later pushes only send what changed; `clean --images` removes the volume.
+    registry:
+        image: registry:2.8.3
+        ports:
+            - '127.0.0.1:${REGISTRY_PORT:-5055}:5000'
+        volumes:
+            - registry:/var/lib/registry
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:5000/v2/']
+            interval: 2s
+            timeout: 5s
+            retries: 15
+
     # Management app stand-in (standin/). Built from the experiments repo (Dockerfile here), with the
     # repo bind-mounted for hot reload and the image's node_modules kept in place.
     bma:
@@ -67,7 +83,14 @@ services:
         depends_on:
             toa:
                 condition: service_healthy
+            registry:
+                condition: service_healthy
 
 networks:
     default:
         name: enclave-dev
+
+volumes:
+    # Named explicitly so `clean --images` can find it (REGISTRY_VOLUME in harness.ts).
+    registry:
+        name: enclave-dev-registry

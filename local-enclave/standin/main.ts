@@ -25,7 +25,7 @@ const samplesFile = path.join(stateDir, 'samples.json')
 const samples = (): Sample[] =>
     existsSync(samplesFile) ? (JSON.parse(readFileSync(samplesFile, 'utf8')) as Sample[]) : []
 
-const store = new JobStore(path.join(stateDir, 'jobs.json'), path.join(stateDir, 'jobs'))
+const store = new JobStore(path.join(stateDir, 'jobs.json'), path.join(stateDir, 'jobs'), process.env.CODE_IMAGE_PREFIX)
 const server = createStandin({
     memberId,
     enclavePublicKeyPem: readKey('enclave.pub.pem'),
