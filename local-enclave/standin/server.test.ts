@@ -66,9 +66,12 @@ describe('enclave authentication', () => {
         expect((await fetch(ready, { headers: bearer() })).status).toBe(200)
     })
 
-    it('lists auth failures on the page', async () => {
+    it('lists auth failures on the page and in jobs.json', async () => {
         const html = await (await fetch(`${base}/`)).text()
         expect(html).toContain('Enclave auth failures')
+        const dump = (await (await fetch(`${base}/jobs.json`)).json()) as { authFailures: Array<{ path: string }> }
+        expect(dump.authFailures.length).toBeGreaterThan(0)
+        expect(dump.authFailures[0]!.path).toBe('/api/studies/ready')
     })
 
     it('warns when the setup-app in use cannot forward data variables', async () => {
