@@ -184,7 +184,7 @@ export function createStandin(opts: StandinOptions): Server {
             clearInterval(ping)
         })
     })
-    route('GET', /^\/jobs\.json$/, [], (_req, res) => json(res, 200, { jobs: store.all() }))
+    route('GET', /^\/jobs\.json$/, [], (_req, res) => json(res, 200, { jobs: store.all(), authFailures }))
     route('POST', /^\/jobs$/, [], async (req, res) => {
         const body = await readJson(req)
         const sampleName = typeof body.sample === 'string' ? body.sample : undefined

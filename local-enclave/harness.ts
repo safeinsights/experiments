@@ -200,6 +200,50 @@ export function researchContainers(): string[] {
     return out.ok ? out.out.split('\n').filter(Boolean) : []
 }
 
+/** Research container count per job id (the `instance` label), including exited ones. */
+export function researchContainersByJob(): Map<string, number> {
+    const out = tryCapture('docker', [
+        'ps',
+        '-a',
+        '--filter',
+        'label=managed-by=setup-app',
+        '--filter',
+        'label=component=research-container',
+        '--format',
+        '{{.Label "instance"}}',
+    ])
+    const counts = new Map<string, number>()
+    for (const jobId of out.ok ? out.out.split('\n').filter(Boolean) : [])
+        counts.set(jobId, (counts.get(jobId) ?? 0) + 1)
+    return counts
+}
+
+/** Containers of the compose project, running or not; works before any env file exists. */
+export function stackContainers(): string[] {
+    const out = tryCapture('docker', ['ps', '-aq', '--filter', 'label=com.docker.compose.project=enclave-dev'])
+    return out.ok ? out.out.split('\n').filter(Boolean) : []
+}
+
+/** Running flag, start time and restart count of a compose service's container, or undefined if it has none. */
+export function serviceState(service: string): string | undefined {
+    const id = tryCapture('docker', [
+        'ps',
+        '-aq',
+        '--filter',
+        'label=com.docker.compose.project=enclave-dev',
+        '--filter',
+        `label=com.docker.compose.service=${service}`,
+    ])
+    if (!id.ok || !id.out) return undefined
+    const state = tryCapture('docker', [
+        'inspect',
+        '--format',
+        'running={{.State.Running}} started={{.State.StartedAt}} restarts={{.RestartCount}}',
+        id.out.split('\n')[0]!,
+    ])
+    return state.ok ? state.out : undefined
+}
+
 export function buildImage(tag: string, context: string, buildArgs: Record<string, string> = {}): boolean {
     const args = [
         'build',

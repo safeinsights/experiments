@@ -25,7 +25,13 @@ const samplesFile = path.join(stateDir, 'samples.json')
 const samples = (): Sample[] =>
     existsSync(samplesFile) ? (JSON.parse(readFileSync(samplesFile, 'utf8')) as Sample[]) : []
 
-const store = new JobStore(path.join(stateDir, 'jobs.json'), path.join(stateDir, 'jobs'), process.env.CODE_IMAGE_PREFIX)
+// `smoke` keeps its jobs apart (state/smoke) so a run neither sees nor clears the ones from `up`.
+const jobStoreDir = process.env.JOB_STORE_DIR ?? stateDir
+const store = new JobStore(
+    path.join(jobStoreDir, 'jobs.json'),
+    path.join(jobStoreDir, 'jobs'),
+    process.env.CODE_IMAGE_PREFIX,
+)
 const server = createStandin({
     memberId,
     enclavePublicKeyPem: readKey('enclave.pub.pem'),

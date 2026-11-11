@@ -7,6 +7,7 @@ status and read the decrypted results. No Postgres, Clerk or SeaweedFS.
 ```
 ./dev-enclave.ts up            # keys, env files, sample images, then docker compose up
 ./dev-enclave.ts run offline   # queue a job (or use the buttons at http://localhost:4000)
+./dev-enclave.ts smoke         # run sample jobs in the background and check the outcome; exit 0 = pass
 ./dev-enclave.ts down          # stop everything, remove research containers
 ./dev-enclave.ts clean         # down + forget jobs; --keys / --images go further
 ```
@@ -110,7 +111,7 @@ layout; edit `localRoot` (or the workspace folder paths) otherwise.
 The stand-in implements what setup-app and the TOA call on the real management app:
 `GET /api/studies/ready`, `PUT /api/job/:id`, `GET /api/job/:id/status`, `GET /api/job/:id/keys`,
 `POST /api/job/:id/results`, with RS256 JWT verification against `enclave.pub.pem` (`--no-verify-jwt`
-turns failures into warnings). `GET /jobs.json` dumps its state.
+turns failures into warnings). `GET /jobs.json` dumps its jobs and the JWT failures it recorded.
 
 ### Images and the registry
 
@@ -131,6 +132,41 @@ inside its VM, where connections are dropped rather than refused, so each pull o
 name stalls on a 30-second dial timeout per attempt (HTTPS, then HTTP): about a minute per job before
 setup-app gives up on the pull and runs whatever copy is local. Images used to be built locally as
 `localhost/enclave-dev/...`, which is why every job sat at `JOB-READY` for a minute.
+
+## Smoke test
+
+`./dev-enclave.ts smoke` checks that setup-app runs jobs correctly, with no clicking. It's meant
+to be run by hand before and after a setup-app change, and its output compared. It:
+
+1. prepares everything `up` does except AWS and the tutor sample, so it needs no SSO session or
+   Harbor login;
+2. starts the stack in the background (`docker compose up --detach --wait`), with the stand-in
+   keeping its jobs in `state/smoke/` (emptied at the start of each run), so your jobs from `up`
+   are neither seen nor touched;
+3. submits three jobs at once and polls `/jobs.json` and `docker ps` until every job has finished,
+   its research container is gone and nothing has changed for 15 seconds;
+4. prints a PASS or FAIL line per check, runs `down` and exits 1 if any check failed.
+
+| job             | what it exercises                                                   |
+| --------------- | ------------------------------------------------------------------- |
+| `offline`       | the success path: progress messages, results upload and decryption  |
+| `offline-fail`  | the container exits 1: setup-app reports `JOB-ERRORED` and the logs |
+| `missing-image` | the image is not in the registry: launching fails, nothing runs     |
+
+For each job it checks the exact status history (so a failure reported twice, or a status after the
+end, fails), that the job was launched exactly once (or never, for `missing-image`) and never had two
+research containers, that it reached `RUN-COMPLETE` or `JOB-ERRORED` within `--timeout` seconds
+(default 60), that its research container was removed, and what was delivered: the exact
+`results.csv`, or a log with the container's output, or nothing. For the stack it checks that the
+stand-in saw no JWT failures and that the setup-app container neither stopped nor restarted.
+
+A failed `offline-fail` run shows two `JOB-ERRORED`: setup-app's, with the container's exit message,
+and the one the management app records for the log-only delivery that follows. The real management
+app records both too.
+
+`--keep` leaves the stack running afterwards, so you can open the page (it shows only the smoke jobs)
+and the containers; stop it with `./dev-enclave.ts down`. `smoke` refuses to start while the stack is
+already up.
 
 ## Sample data in AWS
 

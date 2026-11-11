@@ -35,19 +35,24 @@ import {
     readDockerAuthLocal,
     registryOf,
     researchContainers,
+    researchContainersByJob,
     run,
     runAsync,
     say,
     serveBuilds,
+    serviceState,
+    stackContainers,
     tryCapture,
     writeEnvFile,
 } from './harness'
+import { runSmoke } from './smoke'
 import type { Sample } from './standin/page'
 
-const USAGE = `usage: ./dev-enclave.ts <up|run|down|clean> [options]   (or: npm run enclave -- <command>)
+const USAGE = `usage: ./dev-enclave.ts <up|run|smoke|down|clean> [options]   (or: npm run enclave -- <command>)
 
   up     [--fresh-keys] [--no-verify-jwt] [--no-aws] [--skip-samples]
   run    [offline|offline-fail|tutor|--image NAME|--code main.py [--base-image IMAGE]] [--title TITLE]
+  smoke  [--keep] [--timeout SECONDS]
   down
   clean  [--keys] [--images]
 
@@ -75,7 +80,19 @@ const settings = {
 const pageUrl = () => `http://localhost:${settings.port}/`
 const imageTag = (name: string) => `${IMAGE_PREFIX}/sample-${name}`
 
-async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean; samples: boolean }): Promise<number> {
+type PrepareFlags = {
+    freshKeys: boolean
+    verifyJwt: boolean
+    aws: boolean
+    samples: boolean
+    /** false skips the tutor sample (and its Harbor login prompt) altogether. */
+    tutor: boolean
+    /** Directory under state/ for the stand-in's jobs instead of state/ itself. */
+    jobStore?: string
+}
+
+/** Everything `up` and `smoke` share before compose starts: checks, keys, env files, sample images. */
+async function prepare(flags: PrepareFlags): Promise<void> {
     if (
         !existsSync(path.join(settings.setupAppDir, 'Dockerfile')) ||
         !existsSync(path.join(settings.setupAppDir, 'src', 'scripts', 'poll.ts'))
@@ -170,6 +187,7 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
         SETUP_APP_DIR: settings.setupAppDir,
         SETUP_APP_FORWARDS_ENV: String(forwardsEnv),
         CODE_IMAGE_PREFIX: `${IMAGE_PREFIX}/code`,
+        ...(flags.jobStore ? { JOB_STORE_DIR: `/app/local-enclave/state/${flags.jobStore}` } : {}),
     })
     writeEnvFile(path.join(STATE_DIR, 'compose.env'), {
         SETUP_APP_DIR: settings.setupAppDir,
@@ -184,10 +202,14 @@ async function up(flags: { freshKeys: boolean; verifyJwt: boolean; aws: boolean;
     })
 
     if (flags.samples) {
+        // The registry has to be up first: every built image is pushed to it.
         startRegistry()
-        await buildSamples(awsReady && forwardsEnv, forwardsEnv)
+        await buildSamples({ tutor: flags.tutor, awsReady: awsReady && forwardsEnv, forwardsEnv })
     }
+}
 
+async function up(flags: Omit<PrepareFlags, 'tutor' | 'jobStore'>): Promise<number> {
+    await prepare({ ...flags, tutor: true })
     say(`starting the stack; page at ${pageUrl()} (Ctrl-C stops everything)`)
     say(
         `debugger ports: setup-app ${settings.debugPorts.setupApp}, trusted-output-app ${settings.debugPorts.toa}, stand-in ${settings.debugPorts.bma} (see .vscode/launch.json)`,
@@ -213,7 +235,15 @@ function startRegistry(): void {
     }
 }
 
-async function buildSamples(awsReady: boolean, forwardsEnv: boolean): Promise<void> {
+async function buildSamples({
+    tutor,
+    awsReady,
+    forwardsEnv,
+}: {
+    tutor: boolean
+    awsReady: boolean
+    forwardsEnv: boolean
+}): Promise<void> {
     const samples: Sample[] = []
     const offline = path.join(LOCAL_DIR, 'samples', 'offline')
     say('building the offline sample image')
@@ -232,7 +262,9 @@ async function buildSamples(awsReady: boolean, forwardsEnv: boolean): Promise<vo
         })
     }
 
-    if (!settings.tutorBaseImage) {
+    if (!tutor) {
+        // smoke: only the offline samples, so no registry login is needed
+    } else if (!settings.tutorBaseImage) {
         say('SAMPLE_TUTOR_BASE_IMAGE is empty; skipping the tutor sample')
     } else if (!forwardsEnv) {
         say('skipping the tutor sample: this setup-app cannot hand it the S3 variables (see the warning above)')
@@ -296,6 +328,49 @@ async function tutorBaseAvailable(): Promise<boolean> {
     return probe.ok
 }
 
+/**
+ * Bring the stack up in the background with its own job store, run the smoke scenarios against it
+ * and take it down again (unless --keep). Exit code 0 only when every check passed.
+ */
+async function smoke(flags: { keep: boolean; timeoutSeconds: number }): Promise<number> {
+    if (stackContainers().length) {
+        throw new HarnessError('the stack is already running; stop it (`dev-enclave.ts down`) before running smoke')
+    }
+    rmSync(path.join(STATE_DIR, 'smoke'), { recursive: true, force: true })
+    await prepare({
+        freshKeys: false,
+        verifyJwt: true,
+        aws: false,
+        samples: true,
+        tutor: false,
+        jobStore: 'smoke',
+    })
+    say('starting the stack in the background')
+    if (run('docker', [...composeArgs(), 'up', '--build', '--detach', '--wait', '--remove-orphans']) !== 0) {
+        down()
+        throw new HarnessError('the stack did not come up; see the compose output above')
+    }
+    let passed = false
+    try {
+        passed = await runSmoke({
+            baseUrl: `http://127.0.0.1:${settings.port}`,
+            timeoutSeconds: flags.timeoutSeconds,
+            settleSeconds: 15,
+            containersByJob: researchContainersByJob,
+            setupAppState: () => serviceState('setup-app'),
+            say,
+        })
+    } finally {
+        if (flags.keep) {
+            say(`leaving the stack up: page at ${pageUrl()}, logs with \`docker compose -p enclave-dev logs -f\`;`)
+            say('  `dev-enclave.ts down` stops it')
+        } else {
+            down()
+        }
+    }
+    return passed ? 0 : 1
+}
+
 function down(): void {
     say('stopping the stack')
     run('docker', [...composeArgs(), 'down', '--remove-orphans', '--timeout', '5'])
@@ -352,6 +427,7 @@ function clean(flags: { keys: boolean; images: boolean }): number {
         'jobs.json',
         'jobs',
         'builds',
+        'smoke',
         'samples.json',
         'setup-app.env',
         'toa.env',
@@ -394,6 +470,8 @@ async function main(argv: string[]): Promise<number> {
             title: { type: 'string' },
             keys: { type: 'boolean', default: false },
             images: { type: 'boolean', default: false },
+            keep: { type: 'boolean', default: false },
+            timeout: { type: 'string', default: '60' },
             help: { type: 'boolean', short: 'h', default: false },
         },
     })
@@ -417,6 +495,11 @@ async function main(argv: string[]): Promise<number> {
                 code: values.code,
                 baseImage: values['base-image'],
             })
+        case 'smoke': {
+            const timeoutSeconds = Number(values.timeout)
+            if (!(timeoutSeconds > 0)) throw new HarnessError(`--timeout must be a positive number of seconds`)
+            return smoke({ keep: values.keep, timeoutSeconds })
+        }
         case 'down':
             down()
             return 0

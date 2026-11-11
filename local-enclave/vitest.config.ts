@@ -4,6 +4,6 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
     root: import.meta.dirname,
     test: {
-        include: ['standin/*.test.ts'],
+        include: ['*.test.ts', 'standin/*.test.ts'],
     },
 })
