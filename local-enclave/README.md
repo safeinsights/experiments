@@ -1,15 +1,16 @@
 # Local enclave stack
 
-Run the enclave loop on a laptop: setup-app in DOCKER mode and the trusted-output-app from sibling
-checkouts, plus a small stand-in for the management app that lets you trigger jobs, watch their
+Run the enclave loop on a laptop: setup-app (in DOCKER mode, or KUBERNETES mode against a local kind
+cluster with `--k8s`) and the trusted-output-app from sibling checkouts, plus a small stand-in for the management app that lets you trigger jobs, watch their
 status and read the decrypted results. No Postgres, Clerk or SeaweedFS.
 
 ```
 ./dev-enclave.ts up            # keys, env files, sample images, then docker compose up
+./dev-enclave.ts up --k8s      # the same, with setup-app running jobs in a kind cluster
 ./dev-enclave.ts run offline   # queue a job (or use the buttons at http://localhost:4000)
 ./dev-enclave.ts smoke         # run sample jobs in the background and check the outcome; exit 0 = pass
-./dev-enclave.ts down          # stop everything, remove research containers
-./dev-enclave.ts clean         # down + forget jobs; --keys / --images go further
+./dev-enclave.ts down          # stop everything, remove research containers (and Jobs)
+./dev-enclave.ts clean         # down + delete the kind cluster + forget jobs; --keys / --images go further
 ```
 
 From the repo root the same commands are `npm run enclave -- up` and so on; `npm run enclave:test`,
@@ -25,6 +26,8 @@ From the repo root the same commands are `npm run enclave -- up` and so on; `npm
   lacks it, `up` warns, skips the `tutor` sample and the page shows a banner; the offline sample
   and pasted code still run, but nothing can read S3.
 - Optional, for the `tutor` sample: a Harbor login (see below) and an AWS SSO session.
+- Optional, for `--k8s`: [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+  (`brew install kind` on macOS). kubectl isn't needed; the scripts run it inside the kind node.
 
 ## What `up` does
 
@@ -167,6 +170,46 @@ app records both too.
 `--keep` leaves the stack running afterwards, so you can open the page (it shows only the smoke jobs)
 and the containers; stop it with `./dev-enclave.ts down`. `smoke` refuses to start while the stack is
 already up.
+
+`smoke --k8s` runs the same jobs and checks with setup-app in Kubernetes mode (see below), looking at
+research Jobs instead of containers. Where a provider behaves differently today, the scenario in
+`smoke.ts` records that as a known divergence: those checks print `KNOWN` instead of `PASS`, with the
+reason underneath, and still fail if the behaviour changes. Today there is one: in Kubernetes mode
+setup-app never reports a pod that can't pull its image, so `missing-image` stays `JOB-PROVISIONING`
+with its pod in `ErrImagePull` (until `down` deletes the Job).
+
+## Kubernetes mode
+
+`up --k8s` and `smoke --k8s` run setup-app with `DEPLOYMENT_ENVIRONMENT=KUBERNETES` against a
+single-node [kind](https://kind.sigs.k8s.io/) cluster called `enclave-dev`. setup-app itself still
+runs in compose, so hot reload and the debugger work as in Docker mode; only the research jobs move
+into the cluster. The pieces, all set up by the script (`kind.ts`), so there is nothing to do by hand:
+
+- **The cluster** is created on the first `--k8s` run (about 40s) from a pinned node image
+  (Kubernetes 1.37; setup-app needs 1.31 or later), and reused after that. `down` leaves it
+  running, so the next `up --k8s` starts at once; `clean` deletes it. The node takes about 400 MB
+  of memory at idle, so on a laptop stop it when you're done for the day with
+  `docker stop enclave-dev-control-plane`. The next `--k8s` run starts it again and waits for the
+  cluster's DNS to come back (about 35s).
+- **Images:** the node's containerd maps `127.0.0.1:5055` to the compose registry over kind's `kind`
+  Docker network (kind's local-registry setup), so image names are the same in both modes.
+- **The trusted-output-app:** research pods reach `http://toa:3002` through a `toa` Service with no
+  selector, whose EndpointSlice points at the TOA container's address on the `kind` network. `up`
+  keeps it current if compose recreates the container.
+- **setup-app's access:** a ServiceAccount in namespace `enclave` with a Role for Jobs, pods and pod
+  logs, and a long-lived token. Its token, CA and namespace are written to
+  `state/k8s/serviceaccount/` and mounted where `K8S_SERVICEACCOUNT_PATH` points. setup-app reaches
+  the API server at `https://enclave-dev-control-plane:6443` on the `kind` network.
+- **Pull secret:** setup-app always names `HARBOR_PULL_SECRET` in its Jobs, so the script creates a
+  `harbor-pull` secret with dummy credentials, which the local registry ignores.
+
+`compose.k8s.yaml` is layered over `compose.yaml` only in this mode, to put the registry, the TOA
+and setup-app on the `kind` network; Docker mode never needs it. Research pods get only what
+setup-app's Kubernetes mode hands them (`TRUSTED_OUTPUT_ENDPOINT`, plus `BQ_*` when set), so the
+`tutor` sample is skipped.
+
+To look around: `kubectl --context kind-enclave-dev -n enclave get jobs,pods` (kind adds the context
+to your kubeconfig).
 
 ## Sample data in AWS
 

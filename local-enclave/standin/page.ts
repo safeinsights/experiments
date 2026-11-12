@@ -23,7 +23,7 @@ export type PageModel = {
     samples: Sample[]
     /** Suggestions for a code job's base image; the first is the default. */
     baseImages: string[]
-    setupApp?: { dir: string; forwardsEnv: boolean }
+    setupApp?: { dir: string; forwardsEnv: boolean; provider?: 'docker' | 'kubernetes' }
     authFailures: AuthFailure[]
     jobs: JobView[]
 }
@@ -294,9 +294,11 @@ export function renderPage(model: PageModel): string {
         ? model.jobs.map(renderJob).join('')
         : '<p class="muted">No jobs yet. Run a sample above.</p>'
     const setupAppWarning =
-        model.setupApp && !model.setupApp.forwardsEnv
-            ? `<section class="warn"><h3>This setup-app cannot forward data variables</h3><p>The checkout at <code>${escapeHtml(model.setupApp.dir)}</code> has no <code>RESEARCH_CONTAINER_ENV</code> support, so research containers get no AWS credentials or <code>HIGHLIGHTS_*</code> variables: the tutor sample is unavailable and pasted code cannot read S3. Point <code>SETUP_APP_DIR</code> at a checkout of setup-app's <code>local-dev-enclave</code> branch and start again.</p></section>`
-            : ''
+        !model.setupApp || model.setupApp.forwardsEnv
+            ? ''
+            : model.setupApp.provider === 'kubernetes'
+              ? `<section class="warn"><h3>Kubernetes mode: no data variables</h3><p>setup-app's Kubernetes mode hands research pods only <code>TRUSTED_OUTPUT_ENDPOINT</code> (and <code>BQ_*</code> when set), so they get no AWS credentials or <code>HIGHLIGHTS_*</code> variables: the tutor sample is unavailable and pasted code cannot read S3. Start without <code>--k8s</code> for those.</p></section>`
+              : `<section class="warn"><h3>This setup-app cannot forward data variables</h3><p>The checkout at <code>${escapeHtml(model.setupApp.dir)}</code> has no <code>RESEARCH_CONTAINER_ENV</code> support, so research containers get no AWS credentials or <code>HIGHLIGHTS_*</code> variables: the tutor sample is unavailable and pasted code cannot read S3. Point <code>SETUP_APP_DIR</code> at a checkout of setup-app's <code>local-dev-enclave</code> branch and start again.</p></section>`
     return `<!doctype html>
 <html lang="en">
 <head>

@@ -7,6 +7,7 @@ import path from 'node:path'
 import jwt from 'jsonwebtoken'
 import { fingerprintSpki } from './decrypt'
 import { JobStore } from './jobs'
+import { renderPage } from './page'
 import { createStandin } from './server'
 import { encryptLikeToa, keyPair, spkiOf } from './testing'
 
@@ -78,6 +79,21 @@ describe('enclave authentication', () => {
         const html = await (await fetch(`${base}/`)).text()
         expect(html).toContain('This setup-app cannot forward data variables')
         expect(html).toContain('/checkouts/setup-app')
+    })
+
+    it('in Kubernetes mode blames the mode, not the setup-app checkout', () => {
+        const html = renderPage({
+            memberId: 'openstax',
+            verifyJwt: true,
+            reviewerFingerprint: '',
+            samples: [],
+            baseImages: [],
+            setupApp: { dir: '/checkouts/setup-app', forwardsEnv: false, provider: 'kubernetes' },
+            authFailures: [],
+            jobs: [],
+        })
+        expect(html).toContain('Kubernetes mode: no data variables')
+        expect(html).not.toContain('This setup-app cannot forward data variables')
     })
 })
 

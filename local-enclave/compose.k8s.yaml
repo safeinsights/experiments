@@ -1,0 +1,26 @@
+# Kubernetes mode (`up --k8s`): layered over compose.yaml, only when the kind cluster exists. Puts the
+# registry, the trusted-output-app and setup-app on kind's `kind` network, so the node can pull from the
+# registry, research pods can reach the TOA (through the `toa` Service, see kind.ts) and setup-app can
+# reach the API server. Kept out of compose.yaml so Docker mode never needs the `kind` network.
+services:
+    registry:
+        networks:
+            default:
+            kind:
+                aliases: [enclave-dev-registry]
+
+    toa:
+        networks:
+            default:
+            kind:
+
+    setup-app:
+        networks:
+            default:
+            kind:
+        volumes:
+            - ./state/k8s/serviceaccount:/var/run/enclave-serviceaccount:ro
+
+networks:
+    kind:
+        external: true
