@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RESULTS_CSV, SCENARIOS, checkJob, checkStack, historyMismatch, type Observation } from './smoke'
+import { RESULTS_CSV, SCENARIOS, checkJob, checkStack, historyMismatch, report, type Observation } from './smoke'
 import type { Job } from './standin/jobs'
 
 const scenario = (name: string) => SCENARIOS.find((s) => s.name === name)!
@@ -31,8 +31,8 @@ const created = ['INITIATED', 'CODE-APPROVED', 'JOB-READY']
 
 const observe = (j: Job, o: Partial<Observation> = {}): Observation => ({
     job: j,
-    maxContainers: 1,
-    containersLeft: 0,
+    maxWorkloads: 1,
+    workloadsLeft: 0,
     ...o,
 })
 const failures = (checks: Array<{ ok: boolean; name: string }>) => checks.filter((c) => !c.ok).map((c) => c.name)
@@ -59,7 +59,7 @@ describe('smoke checks', () => {
 
     it('pass a missing image that never launches', () => {
         const j = job('missing-image', [...created, 'JOB-ERRORED: Docker API Call Error: Failed to deploy'])
-        expect(failures(checkJob(scenario('missing-image'), observe(j, { maxContainers: 0 }), 60))).toEqual([])
+        expect(failures(checkJob(scenario('missing-image'), observe(j, { maxWorkloads: 0 }), 60))).toEqual([])
     })
 
     it('catch a failure reported twice by setup-app', () => {
@@ -78,7 +78,7 @@ describe('smoke checks', () => {
 
     it('catch a double launch, a slow job, a leftover container and a wrong result', () => {
         const j = job('offline', [...created, 'JOB-PROVISIONING', 'JOB-PROVISIONING', ...progress, 'RUN-COMPLETE'])
-        const o = observe(j, { maxContainers: 2, containersLeft: 1, result: { 'results.csv': 'nope' } })
+        const o = observe(j, { maxWorkloads: 2, workloadsLeft: 1, result: { 'results.csv': 'nope' } })
         expect(failures(checkJob(scenario('offline'), o, 5))).toEqual([
             'status history',
             'launched once',
@@ -95,6 +95,37 @@ describe('smoke checks', () => {
             ok: false,
             detail: 'no terminal status',
         })
+    })
+
+    it("pass Kubernetes' missing image against its known divergence, marked as such", () => {
+        const j = job('missing-image', [...created, 'JOB-PROVISIONING'])
+        const checks = checkJob(scenario('missing-image'), observe(j, { workloadsLeft: 1 }), 60, 'kubernetes')
+        expect(failures(checks)).toEqual([])
+        expect(checks.filter((c) => c.known).map((c) => c.name)).toEqual([
+            'status history',
+            'launched once',
+            'never finishes',
+            'research Job left behind',
+        ])
+        const lines: string[] = []
+        expect(report(checks, (line) => lines.push(line))).toBe(true)
+        expect(lines.at(-1)).toBe('all 5 checks passed (4 of them against a known divergence)')
+        expect(lines.filter((line) => line.includes('KNOWN  missing-image'))).toHaveLength(4)
+    })
+
+    it('fail Kubernetes if the missing image starts being reported like in Docker', () => {
+        const j = job('missing-image', [...created, 'JOB-PROVISIONING', 'JOB-ERRORED: image pull failed'])
+        const checks = checkJob(scenario('missing-image'), observe(j), 60, 'kubernetes')
+        expect(failures(checks)).toEqual(['status history', 'never finishes', 'research Job left behind'])
+    })
+
+    it('keep the Docker expectation for scenarios without a divergence', () => {
+        const j = job('offline', [...created, 'JOB-PROVISIONING', ...progress, 'RUN-COMPLETE'])
+        const o = observe(j, { result: { 'results.csv': RESULTS_CSV } })
+        const checks = checkJob(scenario('offline'), o, 60, 'kubernetes')
+        expect(failures(checks)).toEqual([])
+        expect(checks.some((c) => c.known)).toBe(false)
+        expect(checks.map((c) => c.name)).toContain('research Job removed')
     })
 
     it('catch auth failures and a restarted setup-app', () => {

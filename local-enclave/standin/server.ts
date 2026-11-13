@@ -19,7 +19,7 @@ export type StandinOptions = {
     /** Suggestions for the base image of a code job; the first one is the default. */
     baseImages?: string[]
     /** Shown as a warning when the setup-app in use cannot forward data variables to research containers. */
-    setupApp?: { dir: string; forwardsEnv: boolean }
+    setupApp?: { dir: string; forwardsEnv: boolean; provider?: 'docker' | 'kubernetes' }
     log?: (line: string) => void
 }
 
