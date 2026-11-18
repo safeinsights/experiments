@@ -163,7 +163,7 @@ research containers, that it reached `RUN-COMPLETE` or `JOB-ERRORED` within `--t
 `results.csv`, or a log with the container's output, or nothing. For the stack it checks that the
 stand-in saw no JWT failures and that the setup-app container neither stopped nor restarted.
 
-A failed `offline-fail` run shows two `JOB-ERRORED`: setup-app's, with the container's exit message,
+A failed `offline-fail` run shows two `JOB-ERRORED`: setup-app's, with the container's exit code,
 and the one the management app records for the log-only delivery that follows. The real management
 app records both too.
 

@@ -50,7 +50,7 @@ describe('smoke checks', () => {
             ...created,
             'JOB-PROVISIONING',
             ...progress,
-            'JOB-ERRORED: Container 3a9680d4 exited with message: ',
+            'JOB-ERRORED: Container 3a9680d4 exited with code 1',
             'JOB-ERRORED',
         ])
         const o = observe(j, { log: { 'logs.txt': 'SAMPLE_FAIL=1: exiting non-zero' } })
@@ -67,13 +67,25 @@ describe('smoke checks', () => {
             ...created,
             'JOB-PROVISIONING',
             ...progress,
-            'JOB-ERRORED: Container 3a9680d4 exited with message: ',
+            'JOB-ERRORED: Container 3a9680d4 exited with code 1',
             'JOB-ERRORED',
-            'JOB-ERRORED: Container 3a9680d4 exited with message: ',
+            'JOB-ERRORED: Container 3a9680d4 exited with code 1',
         ])
         expect(historyMismatch(j, scenario('offline-fail').history)).toMatch(
             /^at #13 expected nothing more, got JOB-ERRORED: Container/,
         )
+    })
+
+    it('catch a JOB-ERRORED without the exit code', () => {
+        for (const message of [
+            'JOB-ERRORED: Container 3a9680d4 exited with message: ',
+            'JOB-ERRORED: Container pod-1 exited with non 0 error code',
+        ]) {
+            const j = job('offline-fail', [...created, 'JOB-PROVISIONING', ...progress, message, 'JOB-ERRORED'])
+            expect(historyMismatch(j, scenario('offline-fail').history)).toMatch(
+                /^at #11 expected .*, got JOB-ERRORED: Container/,
+            )
+        }
     })
 
     it('catch a double launch, a slow job, a leftover container and a wrong result', () => {
