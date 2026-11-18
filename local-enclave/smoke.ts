@@ -77,9 +77,15 @@ export const SCENARIOS: Scenario[] = [
     {
         name: 'offline-fail',
         request: { sample: 'offline-fail', title: 'smoke: offline-fail' },
-        // setup-app reports the failure (with its message), then uploads the logs; the management app
-        // records a second, message-less JOB-ERRORED for that log-only delivery, as the real one does.
-        history: [...CREATED, 'JOB-PROVISIONING', ...PROGRESS, /^JOB-ERRORED: Container \S+ exited/, 'JOB-ERRORED'],
+        // setup-app reports the failure with the container's exit code, then uploads the logs; the management
+        // app records a second, message-less JOB-ERRORED for that log-only delivery, as the real one does.
+        history: [
+            ...CREATED,
+            'JOB-PROVISIONING',
+            ...PROGRESS,
+            /^JOB-ERRORED: Container \S+ exited with code 1$/,
+            'JOB-ERRORED',
+        ],
         launches: 1,
         artifacts: (o) => [
             check(
