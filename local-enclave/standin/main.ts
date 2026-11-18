@@ -44,7 +44,11 @@ const server = createStandin({
         .map((s) => s.trim())
         .filter(Boolean),
     setupApp: process.env.SETUP_APP_DIR
-        ? { dir: process.env.SETUP_APP_DIR, forwardsEnv: process.env.SETUP_APP_FORWARDS_ENV !== 'false' }
+        ? {
+              dir: process.env.SETUP_APP_DIR,
+              forwardsEnv: process.env.SETUP_APP_FORWARDS_ENV !== 'false',
+              provider: process.env.SETUP_APP_PROVIDER === 'kubernetes' ? 'kubernetes' : 'docker',
+          }
         : undefined,
 })
 

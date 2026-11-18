@@ -1,13 +1,15 @@
 #!/usr/bin/env -S npx tsx
 /* eslint-disable no-console */
 /**
- * Local enclave stack: the management app stand-in (standin/), plus setup-app in DOCKER mode and the
- * trusted-output-app from sibling checkouts, all under one docker compose project.
+ * Local enclave stack: the management app stand-in (standin/), plus setup-app (DOCKER mode, or
+ * KUBERNETES mode against a kind cluster with --k8s; see kind.ts) and the trusted-output-app from
+ * sibling checkouts, all under one docker compose project.
  *
  *   ./dev-enclave.ts up            prepare keys, env files and sample images, then compose up
+ *   ./dev-enclave.ts smoke         run the smoke checks against a fresh stack (README.md)
  *   ./dev-enclave.ts run offline   trigger a job (also from the page at http://localhost:4000)
- *   ./dev-enclave.ts down          stop the stack and remove research containers
- *   ./dev-enclave.ts clean         down, plus forget jobs; --keys and --images go further
+ *   ./dev-enclave.ts down          stop the stack and remove research containers and Jobs
+ *   ./dev-enclave.ts clean         down, delete the kind cluster, forget jobs; --keys and --images go further
  *
  * Settings come from the environment; see README.md.
  */
@@ -22,6 +24,7 @@ import {
     KEYS_DIR,
     LEGACY_IMAGE_PREFIX,
     LOCAL_DIR,
+    type Provider,
     REGISTRY_PORT,
     REGISTRY_VOLUME,
     SAMPLES_FILE,
@@ -29,6 +32,7 @@ import {
     bindMountUser,
     buildImage,
     composeArgs,
+    currentProvider,
     dockerFacts,
     ensureKeys,
     exportAwsCredentials,
@@ -44,15 +48,33 @@ import {
     stackContainers,
     tryCapture,
     writeEnvFile,
+    writeProvider,
 } from './harness'
+import {
+    APISERVER,
+    CLUSTER,
+    NAMESPACE,
+    NODE,
+    PULL_SECRET,
+    SA_MOUNT,
+    configureCluster,
+    deleteCluster,
+    ensureCluster,
+    followToa,
+    nodeRunning,
+    pointToaServiceAt,
+    removeResearchJobs,
+    researchJobsByJob,
+    toaAddress,
+} from './kind'
 import { runSmoke } from './smoke'
 import type { Sample } from './standin/page'
 
 const USAGE = `usage: ./dev-enclave.ts <up|run|smoke|down|clean> [options]   (or: npm run enclave -- <command>)
 
-  up     [--fresh-keys] [--no-verify-jwt] [--no-aws] [--skip-samples]
+  up     [--k8s] [--fresh-keys] [--no-verify-jwt] [--no-aws] [--skip-samples]
   run    [offline|offline-fail|tutor|--image NAME|--code main.py [--base-image IMAGE]] [--title TITLE]
-  smoke  [--keep] [--timeout SECONDS]
+  smoke  [--k8s] [--keep] [--timeout SECONDS]
   down
   clean  [--keys] [--images]
 
@@ -81,6 +103,8 @@ const pageUrl = () => `http://localhost:${settings.port}/`
 const imageTag = (name: string) => `${IMAGE_PREFIX}/sample-${name}`
 
 type PrepareFlags = {
+    /** kubernetes runs setup-app in KUBERNETES mode against the kind cluster (kind.ts). */
+    provider: Provider
     freshKeys: boolean
     verifyJwt: boolean
     aws: boolean
@@ -109,17 +133,23 @@ async function prepare(flags: PrepareFlags): Promise<void> {
             `trusted-output-app checkout not found at ${settings.toaDir}; clone it next to this repo or set TOA_DIR`,
         )
     }
+    const k8s = flags.provider === 'kubernetes'
     // The data variables reach research containers through setup-app's RESEARCH_CONTAINER_ENV, which
-    // its DOCKER mode only has from the local-dev-enclave branch onwards.
-    const forwardsEnv = readFileSync(path.join(settings.setupAppDir, 'src', 'lib', 'docker.ts'), 'utf8').includes(
-        'RESEARCH_CONTAINER_ENV',
-    )
+    // its DOCKER mode only has from the local-dev-enclave branch onwards. Its KUBERNETES mode hands
+    // research pods only TRUSTED_OUTPUT_ENDPOINT and BQ_*.
+    const forwardsEnv =
+        !k8s &&
+        readFileSync(path.join(settings.setupAppDir, 'src', 'lib', 'docker.ts'), 'utf8').includes(
+            'RESEARCH_CONTAINER_ENV',
+        )
     const docker = dockerFacts()
     say(
         `docker ${docker.serverVersion} (compose ${docker.composeVersion}), socket ${docker.socket}${docker.rootless ? ', rootless' : ''}`,
     )
-    say(`setup-app from ${settings.setupAppDir}`)
-    if (!forwardsEnv) {
+    say(`setup-app from ${settings.setupAppDir}${k8s ? ' in KUBERNETES mode' : ''}`)
+    if (k8s) {
+        say('Kubernetes mode: research pods get no AWS credentials or data variables, so the tutor sample is skipped')
+    } else if (!forwardsEnv) {
         say('WARNING: this setup-app checkout has no RESEARCH_CONTAINER_ENV support, so research containers get no AWS')
         say('  credentials or data variables. Use the local-dev-enclave branch (SETUP_APP_DIR=/path/to/that checkout).')
         say('  The tutor sample is skipped; pasted code cannot read S3 either.')
@@ -132,20 +162,29 @@ async function prepare(flags: PrepareFlags): Promise<void> {
         say('(first run: the enclave pair signs JWTs, the reviewer pair decrypts results)')
 
     const setupAppEnv: Record<string, string> = {
-        DEPLOYMENT_ENVIRONMENT: 'DOCKER',
         MANAGEMENT_APP_BASE_URL: 'http://bma:4000',
         MANAGEMENT_APP_MEMBER_ID: settings.memberId,
         MANAGEMENT_APP_PRIVATE_KEY: keys.enclavePrivatePem,
         TOA_BASE_URL: 'http://toa:3002',
-        DOCKER_SOCKET: '/var/run/docker.sock',
-        DOCKER_API_VERSION: 'v1.48',
-        RESEARCH_CONTAINER_NETWORK: 'enclave-dev',
         POLL_STUDIES_INTERVAL_SECONDS: '5',
         POLL_ERRORED_JOBS_INTERVAL_SECONDS: '10',
+        ...(k8s
+            ? {
+                  DEPLOYMENT_ENVIRONMENT: 'KUBERNETES',
+                  K8S_APISERVER: APISERVER,
+                  K8S_SERVICEACCOUNT_PATH: SA_MOUNT,
+                  HARBOR_PULL_SECRET: PULL_SECRET,
+              }
+            : {
+                  DEPLOYMENT_ENVIRONMENT: 'DOCKER',
+                  DOCKER_SOCKET: '/var/run/docker.sock',
+                  DOCKER_API_VERSION: 'v1.48',
+                  RESEARCH_CONTAINER_NETWORK: 'enclave-dev',
+              }),
     }
 
     let awsReady = false
-    if (flags.aws && settings.awsProfile) {
+    if (!k8s && flags.aws && settings.awsProfile) {
         const exported = exportAwsCredentials(settings.awsProfile)
         if (exported.ok) {
             const dataEnv: Record<string, string> = {
@@ -186,6 +225,7 @@ async function prepare(flags: PrepareFlags): Promise<void> {
         CODE_BASE_IMAGES: ['python:3.12-slim', settings.tutorBaseImage].filter(Boolean).join(','),
         SETUP_APP_DIR: settings.setupAppDir,
         SETUP_APP_FORWARDS_ENV: String(forwardsEnv),
+        SETUP_APP_PROVIDER: flags.provider,
         CODE_IMAGE_PREFIX: `${IMAGE_PREFIX}/code`,
         ...(flags.jobStore ? { JOB_STORE_DIR: `/app/local-enclave/state/${flags.jobStore}` } : {}),
     })
@@ -200,6 +240,16 @@ async function prepare(flags: PrepareFlags): Promise<void> {
         TOA_DEBUG_PORT: settings.debugPorts.toa,
         BMA_DEBUG_PORT: settings.debugPorts.bma,
     })
+
+    // compose.k8s.yaml joins services to the cluster's `kind` network, so the cluster comes first.
+    writeProvider(flags.provider)
+    if (k8s) {
+        ensureCluster()
+        configureCluster()
+        say(
+            `setup-app runs research Jobs in namespace ${NAMESPACE}; \`kubectl --context kind-${CLUSTER} -n ${NAMESPACE} get jobs,pods\` shows them`,
+        )
+    }
 
     if (flags.samples) {
         // The registry has to be up first: every built image is pushed to it.
@@ -217,9 +267,11 @@ async function up(flags: Omit<PrepareFlags, 'tutor' | 'jobStore'>): Promise<numb
     // Images for pasted code are built here, next to Docker and the registry login, while compose runs.
     const builder = new AbortController()
     const builds = serveBuilds(settings.port, builder.signal)
+    // The TOA container's address on the `kind` network is only known once compose has started it.
+    const toa = flags.provider === 'kubernetes' ? followToa(builder.signal) : Promise.resolve()
     const code = await runAsync('docker', [...composeArgs(), 'up', '--build', '--remove-orphans'])
     builder.abort()
-    await builds
+    await Promise.all([builds, toa])
     down()
     // 130 is compose reporting the Ctrl-C it received, which is the normal way to stop the stack.
     return code === 130 ? 0 : code
@@ -332,12 +384,14 @@ async function tutorBaseAvailable(): Promise<boolean> {
  * Bring the stack up in the background with its own job store, run the smoke scenarios against it
  * and take it down again (unless --keep). Exit code 0 only when every check passed.
  */
-async function smoke(flags: { keep: boolean; timeoutSeconds: number }): Promise<number> {
+async function smoke(flags: { provider: Provider; keep: boolean; timeoutSeconds: number }): Promise<number> {
     if (stackContainers().length) {
         throw new HarnessError('the stack is already running; stop it (`dev-enclave.ts down`) before running smoke')
     }
     rmSync(path.join(STATE_DIR, 'smoke'), { recursive: true, force: true })
+    const k8s = flags.provider === 'kubernetes'
     await prepare({
+        provider: flags.provider,
         freshKeys: false,
         verifyJwt: true,
         aws: false,
@@ -350,13 +404,22 @@ async function smoke(flags: { keep: boolean; timeoutSeconds: number }): Promise<
         down()
         throw new HarnessError('the stack did not come up; see the compose output above')
     }
+    if (k8s) {
+        const address = toaAddress()
+        if (!address) {
+            down()
+            throw new HarnessError('the trusted-output-app is not on the kind network')
+        }
+        pointToaServiceAt(address)
+    }
     let passed = false
     try {
         passed = await runSmoke({
             baseUrl: `http://127.0.0.1:${settings.port}`,
             timeoutSeconds: flags.timeoutSeconds,
             settleSeconds: 15,
-            containersByJob: researchContainersByJob,
+            provider: flags.provider,
+            workloadsByJob: k8s ? researchJobsByJob : researchContainersByJob,
             setupAppState: () => serviceState('setup-app'),
             say,
         })
@@ -371,13 +434,21 @@ async function smoke(flags: { keep: boolean; timeoutSeconds: number }): Promise<
     return passed ? 0 : 1
 }
 
-function down(): void {
+/** keepCluster is false only for `clean`, which deletes the cluster right after. */
+function down(keepCluster = true): void {
     say('stopping the stack')
     run('docker', [...composeArgs(), 'down', '--remove-orphans', '--timeout', '5'])
     const leftovers = researchContainers()
     if (leftovers.length) {
         say(`removing ${leftovers.length} research container(s) setup-app left behind`)
         run('docker', ['rm', '-f', ...leftovers])
+    }
+    // The kind cluster keeps running so the next `up --k8s` starts at once; only the research Jobs go.
+    // `clean` deletes it; `docker stop` on the node pauses it, and the next `--k8s` run restarts it.
+    if (currentProvider() === 'kubernetes' && nodeRunning()) {
+        const jobs = removeResearchJobs()
+        if (jobs) say(`removed ${jobs} research Job(s) setup-app left in the cluster`)
+        if (keepCluster) say(`the kind cluster keeps running (\`clean\` deletes it, \`docker stop ${NODE}\` pauses it)`)
     }
 }
 
@@ -422,8 +493,11 @@ async function trigger(
 }
 
 function clean(flags: { keys: boolean; images: boolean }): number {
-    if (existsSync(path.join(STATE_DIR, 'compose.env'))) down()
+    if (existsSync(path.join(STATE_DIR, 'compose.env'))) down(false)
+    if (deleteCluster()) say(`deleted the kind cluster ${CLUSTER}`)
     for (const entry of [
+        'provider',
+        'k8s',
         'jobs.json',
         'jobs',
         'builds',
@@ -464,6 +538,7 @@ async function main(argv: string[]): Promise<number> {
             'no-verify-jwt': { type: 'boolean', default: false },
             'no-aws': { type: 'boolean', default: false },
             'skip-samples': { type: 'boolean', default: false },
+            k8s: { type: 'boolean', default: false },
             image: { type: 'string' },
             code: { type: 'string' },
             'base-image': { type: 'string' },
@@ -483,6 +558,7 @@ async function main(argv: string[]): Promise<number> {
     switch (command) {
         case 'up':
             return up({
+                provider: values.k8s ? 'kubernetes' : 'docker',
                 freshKeys: values['fresh-keys'],
                 verifyJwt: !values['no-verify-jwt'],
                 aws: !values['no-aws'],
@@ -498,7 +574,7 @@ async function main(argv: string[]): Promise<number> {
         case 'smoke': {
             const timeoutSeconds = Number(values.timeout)
             if (!(timeoutSeconds > 0)) throw new HarnessError(`--timeout must be a positive number of seconds`)
-            return smoke({ keep: values.keep, timeoutSeconds })
+            return smoke({ provider: values.k8s ? 'kubernetes' : 'docker', keep: values.keep, timeoutSeconds })
         }
         case 'down':
             down()

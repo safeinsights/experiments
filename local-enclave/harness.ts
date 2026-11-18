@@ -175,13 +175,28 @@ export function writeEnvFile(file: string, entries: Record<string, string>): voi
     writeFileSync(file, `${lines.join('\n')}\n`, { mode: 0o600 })
 }
 
-export function composeArgs(): string[] {
+export type Provider = 'docker' | 'kubernetes'
+/** Which provider the last `up` or `smoke` prepared for, so later commands use the same compose files. */
+const PROVIDER_FILE = path.join(STATE_DIR, 'provider')
+
+export function writeProvider(provider: Provider): void {
+    mkdirSync(STATE_DIR, { recursive: true })
+    writeFileSync(PROVIDER_FILE, `${provider}\n`)
+}
+
+export function currentProvider(): Provider {
+    return existsSync(PROVIDER_FILE) && readFileSync(PROVIDER_FILE, 'utf8').trim() === 'kubernetes'
+        ? 'kubernetes'
+        : 'docker'
+}
+
+export function composeArgs(provider: Provider = currentProvider()): string[] {
+    const files = provider === 'kubernetes' ? ['compose.yaml', 'compose.k8s.yaml'] : ['compose.yaml']
     return [
         'compose',
         '--project-directory',
         LOCAL_DIR,
-        '-f',
-        path.join(LOCAL_DIR, 'compose.yaml'),
+        ...files.flatMap((file) => ['-f', path.join(LOCAL_DIR, file)]),
         '--env-file',
         path.join(STATE_DIR, 'compose.env'),
     ]
