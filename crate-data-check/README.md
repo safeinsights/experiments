@@ -9,8 +9,8 @@ use, and says which ones are missing data or cannot be reached:
 | ASU          | Athena database `asu-sample-data`                                 | `AWS_ATHENA_WORK_GROUP`                                                                  |
 | ASSISTments  | Athena database `assistments_sample_data`                         | `AWS_ATHENA_WORK_GROUP`                                                                  |
 | CourseKata   | Athena database `coursekata_sample_data`                          | `AWS_ATHENA_WORK_GROUP`                                                                  |
-| Quill        | Postgres sample database `quill_enclave`                          | `QUILL_ENCLAVE_DB_URL`, injected by the Coder template                                   |
-| TERC         | MySQL sample database `terc_enclave`                              | `TERC_ENCLAVE_DB_URL`, injected by the Coder template                                    |
+| Quill        | Postgres sample database `quill_enclave`                          | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, set by the Coder template      |
+| TERC         | MySQL sample database `terc_enclave`                              | `MYSQL_HOST`, `_TCP_PORT`, `_DATABASE`, `_USER`, `MYSQL_PWD`, set by the Coder template  |
 | Khan Academy | BigQuery dataset `si-crate-example-data.khan_academy_sample_data` | `GOOGLE_APPLICATION_CREDENTIALS`, set by the Coder template; `GCP_PROJECT`, `BQ_DATASET` |
 
 Copy the script into the workspace and run it:
@@ -21,9 +21,10 @@ Copy the script into the workspace and run it:
 ```
 
 It first lists each environment variable it reads, with the value it found or the default it used instead
-(the S3 and Athena names follow from the environment, which it reads from the AWS account). The two database
-URLs and `GOOGLE_APPLICATION_CREDENTIALS` have no default: the Coder template sets them, so a missing one fails
-its source.
+(the S3 and Athena names follow from the environment, which it reads from the AWS account). The database
+variables are the ones `psql` and `mysql` themselves read, so either client connects from the workspace with no
+arguments. They and `GOOGLE_APPLICATION_CREDENTIALS` have no default (except the two ports): the Coder template
+sets them, so a missing one fails its source.
 Then it counts the rows in every table of each source, marks each count `ok`, `WRONG`, `MISSING`, `NEW` (no
 expected count) or `ERROR`, and ends with a PASS, WARN or FAIL line per source. It exits 1 when any source
 fails. When the workspace's study has its own Athena database (`AWS_ATHENA_DATABASE_NAME`), that is counted
