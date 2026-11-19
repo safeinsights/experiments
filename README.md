@@ -9,4 +9,5 @@ This repository is a place for SI staff to easily create quick experimental code
 
 If you have some quick code that is useful you'd like to share, add it in a subdirectory.
 
+- `crate-data-check/`: from a Coder workspace, count the rows in every CRATE sample data source (S3, Athena, Postgres, MySQL, BigQuery) and compare them with the expected counts (`./crate-data-check/check-data-sources.sh`); see its README.
 - `local-enclave/`: run setup-app, the trusted-output-app and a stand-in for the management app together on a laptop (`./local-enclave/dev-enclave.ts up`); see its README.
