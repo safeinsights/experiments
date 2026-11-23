@@ -104,8 +104,14 @@ ATHENA_DATABASES = {
     "assistments": "assistments_sample_data",
     "coursekata": "coursekata_sample_data",
 }
-# Injected by the Coder template from the sample_data_secrets in iac's tfvars (none in demo)
-DB_URL_VARIABLES = {"quill": "QUILL_ENCLAVE_DB_URL", "terc": "TERC_ENCLAVE_DB_URL"}
+# Set by the Coder template (none in demo): the variables each engine's own clients read, so a bare psql or
+# mysql connects too. Host, port, database and user come from sample_data_postgres / sample_data_mysql in
+# iac's tfvars; the password from the sample-data secret named in sample_data_secrets.
+DB_VARIABLES = {
+    "quill": {"host": "PGHOST", "port": "PGPORT", "user": "PGUSER", "password": "PGPASSWORD", "database": "PGDATABASE"},
+    "terc": {"host": "MYSQL_HOST", "port": "MYSQL_TCP_PORT", "user": "MYSQL_USER", "password": "MYSQL_PWD", "database": "MYSQL_DATABASE"},
+}
+DB_DEFAULT_PORT = {"quill": 5432, "terc": 3306}
 # Where scripts/load-avro-to-bigquery.ts in iac loads the Khan Academy drop
 KHAN_PROJECT = "si-crate-example-data"
 KHAN_DATASET = "khan_academy_sample_data"
@@ -640,27 +646,28 @@ def rds_ca_bundle():
     return path
 
 
-def database_parts(url):
-    parts = urllib.parse.urlsplit(url)
-    return {
-        "host": parts.hostname,
-        "port": parts.port,
-        "user": urllib.parse.unquote(parts.username or ""),
-        "password": urllib.parse.unquote(parts.password or ""),
-        "database": parts.path.lstrip("/"),
+def database_settings(source, why):
+    """The connection to a sample database from its client's environment variables, or None if one is missing."""
+    names = DB_VARIABLES[source]
+    db = {
+        "host": setting(names["host"], why=why),
+        "port": setting(names["port"], DB_DEFAULT_PORT[source]),
+        "user": setting(names["user"], why=why),
+        "password": setting(names["password"], why=why, secret=True),
+        "database": setting(names["database"], why=why),
     }
+    return None if any(value is None for value in db.values()) else db
 
 
-def postgres_counts(url, timeout):
+def postgres_counts(db, timeout):
     import psycopg
     from psycopg import sql
 
-    db = database_parts(url)
     ca = rds_ca_bundle()
     tls = {"sslmode": "verify-full", "sslrootcert": ca} if ca else {"sslmode": "require"}
     with psycopg.connect(
         host=db["host"],
-        port=db["port"] or 5432,
+        port=int(db["port"]),
         user=db["user"],
         password=db["password"],
         dbname=db["database"],
@@ -687,14 +694,13 @@ def postgres_counts(url, timeout):
     return counts, f"database {db['database']} on {db['host']}"
 
 
-def mysql_counts(url, timeout):
+def mysql_counts(db, timeout):
     import pymysql
 
-    db = database_parts(url)
     ca = rds_ca_bundle()
     conn = pymysql.connect(
         host=db["host"],
-        port=db["port"] or 3306,
+        port=int(db["port"]),
         user=db["user"],
         password=db["password"],
         database=db["database"],
@@ -848,12 +854,15 @@ def main():
 
     for source, count in (("quill", postgres_counts), ("terc", mysql_counts)):
         if source in selected:
-            # No default: iac's Coder template injects these from Secrets Manager, so a missing one is the fault
-            why = "the Coder template injects no sample-data secrets in demo" if environment == "demo" else (
-                "the Coder template should inject it from Secrets Manager; check sample_data_secrets in its tfvars"
+            # No defaults but the port: iac's Coder template sets these, so a missing one is the template's fault
+            why = "the Coder template sets no sample-data variables in demo" if environment == "demo" else (
+                "the Coder template should set it; check sample_data_postgres, sample_data_mysql and"
+                " sample_data_secrets in its tfvars"
             )
-            url = setting(DB_URL_VARIABLES[source], why=why, secret=True)
-            checks[source] = (lambda url=url, count=count: count(url, args.timeout)) if url else f"{DB_URL_VARIABLES[source]} is not set"
+            db = database_settings(source, why)
+            checks[source] = (lambda db=db, count=count: count(db, args.timeout)) if db else (
+                f"{', '.join(DB_VARIABLES[source].values())} are not all set"
+            )
 
     if "khan" in selected:
         # The Coder template sets this and writes the file when its tfvars name a GCP identity provider
