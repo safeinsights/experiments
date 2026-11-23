@@ -107,8 +107,8 @@ ATHENA_DATABASES = {
 # Injected by the Coder template from the sample_data_secrets in iac's tfvars (none in demo)
 DB_URL_VARIABLES = {"quill": "QUILL_ENCLAVE_DB_URL", "terc": "TERC_ENCLAVE_DB_URL"}
 # Where scripts/load-avro-to-bigquery.ts in iac loads the Khan Academy drop
-KHAN_PROJECT = "si-crate-example-data"
-KHAN_DATASET = "khan_academy_sample_data"
+KHAN_GCP = "si-crate-example-data"
+KHAN_BQ_DATASET = "khan_academy_sample_data"
 
 # Rows each table should hold. Every environment loads the same drop of each partner's data, so one set
 # of counts covers them all; a source whose counts do differ by environment can key them by environment
@@ -863,8 +863,8 @@ def main():
         )
         # Khan Academy's research container reads these two
         google_project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-        project = setting("GCP_PROJECT", google_project or KHAN_PROJECT, "from GOOGLE_CLOUD_PROJECT" if google_project else None)
-        dataset = setting("BQ_DATASET", KHAN_DATASET)
+        project = setting("GCP_PROJECT", google_project or KHAN_GCP, "from GOOGLE_CLOUD_PROJECT" if google_project else None)
+        dataset = setting("BQ_DATASET", KHAN_BQ_DATASET)
         if credentials_path:
             checks["khan"] = lambda: bigquery_counts(project, dataset, credentials_path, region, args.timeout)
         else:
