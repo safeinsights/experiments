@@ -8,7 +8,13 @@
     "enclave": "tsx local-enclave/dev-enclave.ts",
     "enclave:test": "vitest run --config local-enclave/vitest.config.ts",
     "enclave:typecheck": "tsc -p local-enclave",
-    "enclave:format": "prettier --write local-enclave"
+    "enclave:format": "prettier --write local-enclave",
+    "pr-cadence": "tsx pr-cadence/local.ts",
+    "pr-cadence:test": "vitest run --config pr-cadence/vitest.config.ts",
+    "pr-cadence:typecheck": "tsc -p pr-cadence",
+    "pr-cadence:format": "prettier --write pr-cadence",
+    "pr-cadence:synth": "cd pr-cadence && cdk synth",
+    "pr-cadence:deploy": "cd pr-cadence && cdk deploy"
   },
   "author": "SafeInsights",
   "license": "MIT",
@@ -18,12 +24,16 @@
     "pnpm": ">=11"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1175.0",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mime-types": "^2.1.4",
     "@zip.js/zip.js": "^2.7.54",
+    "aws-cdk-lib": "^2.278.0",
     "commander": "^12.1.0",
+    "constructs": "^10.8.1",
     "express": "^4.21.0",
+    "isomorphic-git": "^1.44.18",
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
     "node-fetch": "^3.3.2",
@@ -32,6 +42,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "aws-cdk": "^2.1149.0",
+    "esbuild": "^0.28.2",
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

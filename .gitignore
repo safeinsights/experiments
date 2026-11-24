@@ -13,3 +13,4 @@ yarn-error.log*
 .eslintcache
 .venv
 .pnpm-store/
+cdk.out/
